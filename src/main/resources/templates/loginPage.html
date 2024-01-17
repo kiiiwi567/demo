@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Login page</h1>
+   <form action="/api/v1/auth/authenticate" method="post"> <!-- onsubmit="validateForm(); return false;"-->
+        <p>Email:<p>
+        <input class="form-control" type="email" name="userEmail" id="email" required>
+        <p>Password:<p>
+        <input class="form-control" type="password" name="password" id="password" required>
+        <button type="button" id="password-toggle" onclick="togglePassword()">Show</button>
+        <br>
+        <br>
+        <button class="button-blue" type="submit">Submit</button>
+    </form>
+</div>
+
+<script>
+    function validateForm() {
+        var email = document.getElementById('email').value;
+        var password = document.getElementById('password').value;
+
+        // Проверки для электронной почты
+        if (!isValidEmail(email)) {
+            alert('Invalid email address');
+            return;
+        }
+
+        // Проверки для пароля
+        if (!isValidPassword(password)) {
+            alert('Invalid password');
+            return;
+        }
+
+        // Если все проверки прошли успешно, можно выполнить вход или отправить данные на сервер
+        alert('Login successful!');
+    }
+
+    function isValidEmail(email) {
+        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    function isValidPassword(password) {
+        var passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[~."(),:;<>@[\]!#$%&'*+\-/=?^_`{|}])[A-Za-z\d~."(),:;<>@[\]!#$%&'*+\-/=?^_`{|}]{6,20}$/;
+        return passwordRegex.test(password);
+    }
+    function togglePassword() {
+        var passwordField = document.getElementById('password');
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+        } else {
+            passwordField.type = 'password';
+        }
+    }
+</script>
+
+</body>
+</html>

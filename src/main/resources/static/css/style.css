@@ -1,0 +1,104 @@
+body {
+    background-color: #f0f0f0; /* Светло-серый фон */
+    margin: 0;
+    font-family: 'Roboto', sans-serif; /* Пример модернового шрифта */
+
+}
+
+.container {
+    width: 80%;
+    margin: 20px auto; /* Центрирование по горизонтали */
+    background-color: #fff; /* Белая область */
+    padding: 40px;
+    border-radius: 10px; /* Скругление углов */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Тень для подчеркивания области */
+}
+
+.button-container{
+    width:100%;
+    display:flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-content: center;
+    margin: 20px 0;
+}
+
+h1, p {
+    color: #333; /* Цвет текста */
+}
+
+.form-control{
+    margin: 5px auto;
+    padding: 1px 5px;
+    min-width:  187px;
+    height: 30px;
+    border-width: 2px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 5px 5px;
+    min-width: 200px;
+    max-height: 40px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px; /* Скругление углов кнопок */
+    font-size: 14px;
+}
+
+#logoutForm{
+    display: flex;
+    align-items: center;
+    margin: 5px 5px;
+    min-width: 200px;
+    max-height: 40px;
+    border: none;
+    cursor: pointer;
+}
+
+/* Цвет кнопок при наведении */
+button:hover {
+    filter: brightness(0.8); /* Увеличение яркости при наведении */
+}
+
+/* Пример кнопок разных цветов */
+.button-blue {
+    background-color: #3498db; /* Синий цвет */
+    color: #fff;
+}
+
+.button-green {
+    background-color: #2ecc71; /* Зеленый цвет */
+    color: #fff;
+}
+
+.button-orange {
+    background-color: #e67e22; /* Оранжевый цвет */
+    color: #fff;
+}
+
+.button-red {
+    background-color: #e74c3c; /* Красный цвет */
+    color: #fff;
+}
+
+#password-toggle{
+    min-width: 50px
+}
+
+table{
+    width: 100%;
+    border: 2px solid;
+    border-radius: 5px;
+}
+
+th{
+    background-color: gainsboro;
+    height: 30px;
+}
+td{
+    min-width: 10%;
+}
+

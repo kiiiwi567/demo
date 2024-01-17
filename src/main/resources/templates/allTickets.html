@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>All tickets</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<script src="/static/js/js.js"></script>
+<div class="container">
+    <h1>All tickets overview</h1>
+    <div class="button-container">
+    <button class="button-green" type="submit">Create a new ticket</button>
+    <button class="button-blue" type="submit">My tickets only</button>
+    <button class="button-blue" type="submit">All tickets</button>
+        <form id="logoutForm" action="/api/v1/auth/logout" method="post">
+            <button class="button-red" type="submit">Logout</button>
+        </form>
+    </div>
+    <br>
+    <input class="form-control" type="text" value="Search for tickets...">
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Created on</th>
+            <th>Due to</th>
+            <th>Urgency</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="ticket : ${tickets}">
+            <td th:text="${ticket.id}"></td>
+            <td th:text="${ticket.name}"></td>
+            <td th:text="${ticket.createdOn}"></td>
+            <td th:text="${ticket.desiredResolutionDate}"></td>
+            <td th:text="${ticket.urgency}"></td>
+            <td th:text="${ticket.state}"></td>
+            <td><button>action button</button></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
