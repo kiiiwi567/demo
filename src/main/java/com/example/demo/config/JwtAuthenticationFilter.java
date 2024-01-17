@@ -27,15 +27,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        final String authHeader = request.getHeader("cookie");
+        final String authHeader = request.getHeader("cookie") + ";";
         //final String authHeader = request.getHeader("Authorization"); //for postman
         final String jwt;
         final String userEmail;
-        if (authHeader == null ||!authHeader.startsWith("jwtToken=") ) {
+        if (!authHeader.contains("jwtToken=") ) {
             filterChain.doFilter(request, response);
             return;
         }
-        jwt = authHeader.substring(9);
+        int tokenIndex = authHeader.indexOf("jwtToken=") + 9;
+        jwt = authHeader.substring(tokenIndex, authHeader.indexOf(";",tokenIndex));
         userEmail = jwtService.extractUsername(jwt);
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);

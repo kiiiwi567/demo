@@ -15,15 +15,15 @@ public class AuthenticationController {
 
     private final AuthenticationService service;
 
-    @PostMapping(value="/register")
-    public ResponseEntity<AuthenticationResponse> register(@RequestBody RegisterRequest request)
-    {
-        return ResponseEntity.ok(service.register(request));
-    }
+//    @PostMapping(value="/register")
+//    public ResponseEntity<AuthenticationResponse> register(@RequestBody RegisterRequest request)
+//    {
+//        return ResponseEntity.ok(service.register(request));
+//    }
 
 
     @PostMapping(value = "/authenticate", consumes = "application/x-www-form-urlencoded;charset=UTF-8")
-    public ResponseEntity<AuthenticationResponse> authenticate(@RequestParam("userEmail") String email,
+    public RedirectView authenticate(@RequestParam("userEmail") String email,
                                                                @RequestParam("password") String password,
                                                                HttpServletResponse response) {
         AuthenticationRequest request = new AuthenticationRequest();
@@ -34,8 +34,7 @@ public class AuthenticationController {
         Cookie cookie = new Cookie("jwtToken", authenticationResponse.getToken());
         cookie.setPath("/");
         response.addCookie(cookie);
-
-        return ResponseEntity.ok(authenticationResponse);
+        return new RedirectView("/allTickets");
     }
 
     @PostMapping(value="/logout")

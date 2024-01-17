@@ -32,8 +32,9 @@ h1, p {
     padding: 1px 5px;
     min-width:  187px;
     height: 30px;
-    border-width: 2px;
+    border-width: 1px;
     border-radius: 5px;
+    border-color: gainsboro;
     font-size: 14px;
 }
 
@@ -90,8 +91,8 @@ button:hover {
 
 table{
     width: 100%;
-    border: 2px solid;
     border-radius: 5px;
+    border: 1px solid gainsboro;
 }
 
 th{
@@ -100,5 +101,6 @@ th{
 }
 td{
     min-width: 10%;
+    text-align: center;
 }
 

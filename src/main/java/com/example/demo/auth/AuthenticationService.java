@@ -4,7 +4,6 @@ import com.example.demo.config.JwtService;
 import com.example.demo.models.User;
 import com.example.demo.models.enums.UserRole;
 import com.example.demo.repositories.UserRepository;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -36,11 +35,9 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        // Найти пользователя по электронной почте
         var user = repository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // Сравнить пароли с использованием passwordEncoder
         if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             var jwtToken = jwtService.generateToken(user);
             return AuthenticationResponse.builder()

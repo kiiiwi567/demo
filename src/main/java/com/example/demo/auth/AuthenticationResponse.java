@@ -1,6 +1,4 @@
 package com.example.demo.auth;
-
-import jakarta.servlet.http.Cookie;
 import lombok.*;
 
 @Data
