@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "history")
+@Table(name = "history", schema =  "public")
 public class History {
     @Id
     @Column(name = "id")

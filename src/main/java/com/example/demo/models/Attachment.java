@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "attachment")
+@Table(name = "attachment", schema =  "public")
 public class Attachment {
     @Id
     @Column(name = "id")

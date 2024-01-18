@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -24,12 +25,19 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public String extractRole(String token) {
+        String rawRole = extractClaim(token, claims -> claims.get("role", String.class));
+        return rawRole.substring(1,rawRole.length() - 1);
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver){
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
     public String generateToken(UserDetails userDetails){
-        return generateToken(new HashMap<>(), userDetails);
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("role", userDetails.getAuthorities().toString());
+        return generateToken(extraClaims, userDetails);
     }
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails)
     {
@@ -70,4 +78,9 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    public String extractTokenFromRequest(HttpServletRequest request){
+        String authHeader = request.getHeader("cookie") + ";";
+        int tokenIndex = authHeader.indexOf("jwtToken=") + 9;
+        return authHeader.substring(tokenIndex, authHeader.indexOf(";",tokenIndex));
+    }
 }

@@ -3,7 +3,7 @@ package com.example.demo.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "category")
+@Table(name = "category", schema =  "public")
 public class Category {
     @Id
     @Column(name ="id")

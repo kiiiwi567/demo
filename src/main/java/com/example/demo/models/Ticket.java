@@ -8,7 +8,7 @@ import lombok.Data;
 import java.time.LocalDate;
 @Data
 @Entity
-@Table(name = "ticket")
+@Table(name = "ticket", schema =  "public")
 public class Ticket {
     @Id
     @Column(name = "id")
@@ -27,11 +27,13 @@ public class Ticket {
     @Column(name = "desired_resolution_date")
     private LocalDate desiredResolutionDate;
 
-    @Column(name = "assignee_id")
-    private Integer assigneeId;
+    @ManyToOne
+    @JoinColumn(name = "assignee_id")
+    private User assignee;
 
-    @Column(name = "owner_id")
-    private Integer ownerId;
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private User owner;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "state", columnDefinition = "ticketState")
@@ -44,6 +46,7 @@ public class Ticket {
     @Column(name = "urgency", columnDefinition = "ticketUrgency")
     private TicketUrgency urgency;
 
-    @Column(name = "approver_id")
-    private Integer approverId;
+    @ManyToOne
+    @JoinColumn(name = "approver_id")
+    private User approver;
 }
