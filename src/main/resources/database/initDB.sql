@@ -5,7 +5,7 @@ create type "ticketUrgency" as enum ('Critical','High','Average','Low');*/
 create table if not exists category
 (
     id serial primary key,
-    "name" varchar(15)
+    "name" varchar(30)
 );
 
 create table if not exists "user"

@@ -1,10 +1,109 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Create a ticket</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
+<div class="container">
+    <div class="create-container">
+        <form id="createTicket" th:action="@{/createTicket}" th:object="${newTicket}" method="post">
+            <div class="grid">
+                <div><h1>Create a ticket</h1></div>
+                <div class="leftcol"><h4>Category</h4></div>
+                <div>
+                    <select id="category" th:field="*{categoryId}" class="midcol" required>
+                        <option value="" selected disabled hidden>Select category</option>
+                        <option value="1">Application & Services</option>
+                        <option value="2">Benefits & Paperwork</option>
+                        <option value="3">Hardware & Software</option>
+                        <option value="4">People Management</option>
+                        <option value="5">Workplaces & Facilities</option>
+                    </select>
+                </div>
+                <div class="leftcol"><h4>Name</h4></div>
+                <div class="midcol"><input th:field="*{name}" class="inputCr" type="text" required></div>
+                <div class="leftcol"><h4>Description</h4></div>
+                <div class="midcol"><textarea id="descr" th:field="*{description}" type="text"></textarea></div>
+                <div class="leftcol"><h4>Urgency</h4></div>
+                <div>
+                    <select id="urgency" th:field="*{urgency}" class="midcol" required>
+                        <option value="" selected disabled hidden>Select urgency</option>
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Average">Average</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                <div class="leftcol"><h4>Desired resolution date</h4></div>
+                <div class="midcol"><input id="dateId" th:field="*{desiredResolutionDate}" class="inputCr" type="date" required></div>
+                <div class="leftcol"><h4>Add attachments</h4></div>
+                <div class="midcol">
+                    <div class="file-upload">
+                        <label for="fileInput" class="file-label">
+                            Attach
+                        </label>
+                        <input type="file" id="fileInput" class="file-input" onchange="displayFileName(); validateFile()">
+                        <span id="fileName" class="file-name">No file chosen</span>
+                    </div>
+                    <p id="warningMessage" style="color: red;"></p>
+                </div>
+                <div class="leftcol"><h4>Comment</h4></div>
+                <div class="midcol"><textarea id="comm" type="text"></textarea></div>
+                <div class="midcol"><button class="button-green">Create a ticket</button></div>
+            </div>
+        </form>
+        <form id="allTickets" action="/allTickets" method="get">
+            <button form="allTickets" class="button-blue" type="submit">Back to tickets</button>
+        </form>
+    </div>
+</div>
+<script>
+    dateId.min = new Date().toISOString().split("T")[0];
 
+    function displayFileName() {
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+
+        if (fileInput.files.length > 0) {
+            fileName.textContent = fileInput.files[0].name;
+        } else {
+            fileName.textContent = 'No file chosen';
+        }
+    }
+
+    function validateFile() {
+        var fileInput = document.getElementById('fileInput');
+        var warningMessage = document.getElementById('warningMessage');
+        var allowedFormats = ['pdf', 'png', 'doc', 'docx', 'jpg', 'jpeg'];
+        var maxSizeMB = 5;
+
+        if (fileInput.files.length > 0) {
+            var fileName = fileInput.files[0].name;
+            var fileSizeMB = fileInput.files[0].size / (1024 * 1024);
+
+            var fileExtension = fileName.split('.').pop().toLowerCase();
+            if (!allowedFormats.includes(fileExtension)) {
+                warningMessage.innerText = 'The selected file type is not allowed. Please select a file of one of the following types: pdf, png, doc, docx, jpg, jpeg';
+                document.getElementById('attachButton').disabled = true;
+            } else if (fileSizeMB > maxSizeMB) {
+                warningMessage.innerText = 'File size exceeds the limit of 5 MB. Please select a smaller file.';
+                document.getElementById('attachButton').disabled = true;
+            } else {
+                warningMessage.innerText = '';
+                document.getElementById('attachButton').disabled = false;
+            }
+        } else {
+            warningMessage.innerText = '';
+            document.getElementById('attachButton').disabled = false;
+        }
+    }
+
+    function uploadFile() {
+        // Добавьте код для отправки файла на сервер
+        alert('File uploaded successfully!');
+    }
+</script>
 </body>
 </html>

@@ -6,29 +6,30 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-<script src="/static/js/js.js"></script>
 <div class="container">
     <h1>All tickets overview</h1>
     <div class="button-container">
-    <button class="button-green" type="submit">Create a new ticket</button>
-    <button class="button-blue" type="submit">My tickets only</button>
-    <button class="button-blue" type="submit">All tickets</button>
+        <form id="create_Ticket" action="/createTicket" method="get">
+            <button class="button-green" type="submit">Create a new ticket</button>
+        </form>
+        <button class="button-blue" type="submit" onclick="myTicketsFilter()">My tickets only</button>
+        <button class="button-blue" type="submit" onclick="showAllTickets()">All tickets</button>
         <form id="logoutForm" action="/api/v1/auth/logout" method="post">
             <button class="button-red" type="submit">Logout</button>
         </form>
     </div>
     <br>
-    <input class="form-control" type="text" value="Search for tickets...">
-    <table>
+    <input class="form-control" type="text" placeholder="Search for tickets..." oninput="filterTable(this.value)">
+    <table id="tickets">
         <thead>
         <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Created on</th>
-            <th>Due to</th>
-            <th>Urgency</th>
-            <th>Status</th>
-            <th>Action</th>
+            <th data-type="number" data-order="1">ID <span class="arrow"></span></th>
+            <th data-type="string" data-order="1">Name <span class="arrow"></span></th>
+            <th data-type="string" data-order="1">Created on <span class="arrow"></span></th>
+            <th data-type="string" data-order="1">Due to <span class="arrow"></span></th>
+            <th data-type="urgency" data-order="1">Urgency <span class="arrow"></span></th>
+            <th data-type="string" data-order="1">Status <span class="arrow"></span></th>
+            <th id="actHeader">Action</th>
         </tr>
         </thead>
         <tbody>
@@ -39,10 +40,158 @@
             <td th:text="${ticket.desiredResolutionDate}"></td>
             <td th:text="${ticket.urgency}"></td>
             <td th:text="${ticket.state}"></td>
-            <td><button>action button</button></td>
+            <td><button id="actBut">action button</button></td>
         </tr>
         </tbody>
     </table>
 </div>
+<script>
+
+    tickets.onclick = function(e) {
+        if (e.target.tagName != 'TH') return;
+
+        let th = e.target;
+        let order = parseInt(th.dataset.order);
+
+        // если ячейка TH, тогда сортировать
+        // cellIndex - это номер ячейки th:
+        //   0 для первого столбца
+        //   1 для второго и т.д.
+        sortGrid(th.cellIndex, th.dataset.type, order);
+
+        // обновить порядок сортировки
+        th.dataset.order = order === 1 ? -1 : 1;
+        updateArrows(th, order);
+    };
+
+    function sortGrid(colNum, type, order) {
+        let tbody = tickets.querySelector('tbody');
+
+        let rowsArray = Array.from(tbody.rows);
+
+        // compare(a, b) сравнивает две строки, нужен для сортировки
+        let compare;
+
+        switch (type) {
+            case 'number':
+                compare = function(rowA, rowB) {
+                    return (rowA.cells[colNum].innerHTML - rowB.cells[colNum].innerHTML) * order;
+                };
+                break;
+            case 'string':
+                compare = function(rowA, rowB) {
+                    return rowA.cells[colNum].innerHTML.localeCompare(rowB.cells[colNum].innerHTML) * order;
+                };
+                break;
+            case 'urgency':
+                const urgencyOrder = { 'Critical': 0, 'High': 1, 'Average': 2, 'Low': 3 };
+                compare = function(rowA, rowB) {
+                    return (urgencyOrder[rowA.cells[colNum].innerHTML] - urgencyOrder[rowB.cells[colNum].innerHTML]) * order;
+                };
+                break;
+        }
+
+        rowsArray.sort(compare);
+        tbody.append(...rowsArray);
+    }
+
+    function updateArrows(clickedTh, order) {
+        // обновить стрелку у всех заголовков, кроме того, по которому кликнули
+        Array.from(tickets.querySelectorAll('th')).forEach(th => {
+            const arrow = th.querySelector('.arrow');
+            if (th !== clickedTh) {
+                arrow.textContent = '';
+            } else {
+                arrow.textContent = order === 1 ? '▲' : '▼';
+            }
+        });
+    }
+
+    function filterTable(value) {
+        let filter = value.toUpperCase();
+        let table = document.getElementById("tickets");
+        let rows = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < rows.length; i++) {
+            let cells = rows[i].getElementsByTagName("td");
+            let visible = false;
+
+            for (let j = 0; j < cells.length; j++) {
+                let cell = cells[j];
+                if (cell) {
+                    let textValue = cell.textContent || cell.innerText;
+                    if (textValue.toUpperCase().indexOf(filter) > -1) {
+                        visible = true;
+                        break;
+                    }
+                }
+            }
+
+            if (visible) {
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+    }
+</script>
+<script  th:inline="javascript">
+    function myTicketsFilter() {
+        let tickets = /*[[${tickets}]]*/ [];
+        let currentUserEmail = /*[[${currentUserEmail}]]*/ null;
+        let currentUserRole = /*[[${currentUserRole}]]*/ null;
+        //console.log(tickets);
+        let tbody = document.querySelector('#tickets tbody');
+        let rows = tbody.querySelectorAll('tr');
+
+        rows.forEach(row => {
+            let ticketId = parseInt(row.firstElementChild.innerText);
+            //console.log("current id: ",ticketId);
+            let ticket = tickets.find(ticket => ticket.id === ticketId);
+
+            if (ticket) {
+                let ticketOwnerEmail = ticket.owner.email;
+                let ticketStatus = ticket.state;
+                let ticketAssigneeEmail = ticket.assignee.email;
+                //console.log("state: ",ticketStatus,", owner's email: ", ticketOwnerEmail, ", assignee's email: ", ticketAssigneeEmail);
+
+                switch (currentUserRole) {
+                    case 'Employee':
+                        if (currentUserEmail === ticketOwnerEmail) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                        break;
+                    case 'Manager':
+                        if (currentUserEmail === ticketOwnerEmail && ticketStatus === 'Approved') {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                        break;
+                    case 'Engineer':
+                        if (currentUserEmail === ticketAssigneeEmail) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                        break;
+                    default:
+                        row.style.display = '';
+                }
+            }
+        });
+    }
+
+    function showAllTickets() {
+        let tbody = document.querySelector('#tickets tbody');
+        let rows = tbody.querySelectorAll('tr');
+
+        rows.forEach(row => {
+            row.style.display = '';
+        });
+    }
+</script>
 </body>
 </html>

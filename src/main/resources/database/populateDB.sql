@@ -1,7 +1,9 @@
 insert into category values
-(1, 'cat1'),
-(2, 'cat2'),
-(3, 'cat3');
+(1, 'Application & Services'),
+(2, 'Benefits & Paperwork'),
+(3, 'Hardware & Software'),
+(4, 'People Management'),
+(5, 'Workplaces & Facilities');
 
 insert into "user" values
 (1, 'user1','lastname1','Employee','user1_minsk@yopmail.com','$2a$12$z.BX/8HB/K2mjCcwagqKD.N3txk1KclitG9TD09b5K9g1qkWbkLpK'),

@@ -16,6 +16,7 @@ public interface TicketRepository extends JpaRepository <Ticket, Integer> {
     List<Ticket> getAllTicketsForEmployee(@Param("employeeEmail") String employeeEmail);
 
     @Query("SELECT t FROM Ticket t " +
+            "LEFT JOIN t.approver a LEFT JOIN t.owner o " +
             "WHERE (t.owner.email = :managerEmail) " +
             "OR ((t.owner.role = 'Employee') AND (t.state = 'New')) " +
             "OR ((t.approver.email = :managerEmail) AND (t.state IN ('Approved', 'Declined', 'Cancelled', 'In_progress')))" +
