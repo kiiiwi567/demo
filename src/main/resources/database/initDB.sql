@@ -38,7 +38,7 @@ create table if not exists attachment
     id serial primary key,
     contents bytea,
     ticket_id int references ticket (id),
-    "name" varchar(15)
+    "name" varchar(50)
 );
 
 create table if not exists history
@@ -69,3 +69,5 @@ create table if not exists feedback
     "text" varchar(500),
     ticket_id int references ticket (id)
 );
+
+alter table attachment alter column "name" type varchar(100);

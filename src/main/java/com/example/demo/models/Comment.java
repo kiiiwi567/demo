@@ -14,15 +14,17 @@ public class Comment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "user_id")
-    private Integer userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(name = "text")
     private String text;
 
     @Column(name = "date")
-    private LocalDate date;
+    private LocalDate date = LocalDate.now();
 
-    @Column(name = "ticket_id")
-    private Integer ticketId;
+    @ManyToOne
+    @JoinColumn(name = "ticket_id")
+    private Ticket ticket;
 }

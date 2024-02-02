@@ -115,7 +115,7 @@ td{
     text-align: center;
 }
 
-#actBut {
+.actBut {
     min-width: auto;
     width: 90%;
     display: block;
@@ -125,7 +125,7 @@ td{
 .grid{
     display: grid;
     grid-template-columns: 1fr 2fr;
-    grid-template-rows: 1fr 1fr 1fr 2fr 1fr 1fr 1.5fr 2fr;
+    grid-row-gap: 15px;
 }
 
 .leftcol{
@@ -157,8 +157,10 @@ select, .inputCr, textarea{
     white-space: normal;
     resize: none;
 }
+
 #descr, #comm{
-    min-height: 70%;
+    height: fit-content;
+    min-height: 100px ;
 }
 
 .file-upload {
@@ -195,6 +197,11 @@ select, .inputCr, textarea{
 #createTicket{
     width: 70%;
 }
+.remBut{
+    min-width: 80px;
+    margin-left: 20px
+}
+
 
 
 

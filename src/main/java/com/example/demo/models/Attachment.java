@@ -9,14 +9,16 @@ import lombok.Data;
 public class Attachment {
     @Id
     @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "attachment_id_seq", sequenceName = "attachment_id_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "attachment_id_seq")
     private Integer id;
 
     @Column(name = "contents")
-    private String contents;
+    private byte[] contents;
 
-    @Column(name = "ticket_id")
-    private Integer ticketId;
+    @ManyToOne
+    @JoinColumn(name = "ticket_id")
+    private Ticket ticket;
 
     @Column(name = "name")
     private String name;

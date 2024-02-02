@@ -2,6 +2,7 @@ package com.example.demo.models;
 
 import com.example.demo.models.enums.TicketState;
 import com.example.demo.models.enums.TicketUrgency;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
 import jakarta.persistence.*;
@@ -9,6 +10,9 @@ import lombok.Data;
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @Entity
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -56,4 +60,12 @@ public class Ticket {
     @ManyToOne
     @JoinColumn(name = "approver_id")
     private User approver;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments;
+    
+    @JsonIgnore
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Attachment> attachments;
 }

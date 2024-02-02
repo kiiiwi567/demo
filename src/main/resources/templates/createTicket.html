@@ -8,7 +8,7 @@
 <body>
 <div class="container">
     <div class="create-container">
-        <form id="createTicket" th:action="@{/createTicket}" th:object="${newTicket}" method="post">
+        <form id="createTicket" th:action="@{/createTicket}" th:object="${newTicket}" enctype="multipart/form-data" method="post">
             <div class="grid">
                 <div><h1>Create a ticket</h1></div>
                 <div class="leftcol"><h4>Category</h4></div>
@@ -44,14 +44,14 @@
                         <label for="fileInput" class="file-label">
                             Attach
                         </label>
-                        <input type="file" id="fileInput" class="file-input" onchange="displayFileName(); validateFile()">
-                        <span id="fileName" class="file-name">No file chosen</span>
+                        <input type="file" multiple id="fileInput" name="attachments" class="file-input" onchange="validateAndDisplayFiles()">
                     </div>
                     <p id="warningMessage" style="color: red;"></p>
+                    <div id="fileNamesContainer"></div>
                 </div>
                 <div class="leftcol"><h4>Comment</h4></div>
-                <div class="midcol"><textarea id="comm" type="text"></textarea></div>
-                <div class="midcol"><button class="button-green">Create a ticket</button></div>
+                <div class="midcol"><textarea id="comm" name="comment" type="text"></textarea></div>
+                <div class="midcol"><button class="button-green" type="submit" onclick="submitForm()">Create a ticket</button></div>
             </div>
         </form>
         <form id="allTickets" action="/allTickets" method="get">
@@ -61,48 +61,122 @@
 </div>
 <script>
     dateId.min = new Date().toISOString().split("T")[0];
+    // Массив для хранения информации о файлах
+    var previousFiles = [];
 
-    function displayFileName() {
-        const fileInput = document.getElementById('fileInput');
-        const fileName = document.getElementById('fileName');
-
-        if (fileInput.files.length > 0) {
-            fileName.textContent = fileInput.files[0].name;
-        } else {
-            fileName.textContent = 'No file chosen';
-        }
-    }
-
-    function validateFile() {
+    function validateAndDisplayFiles() {
         var fileInput = document.getElementById('fileInput');
-        var warningMessage = document.getElementById('warningMessage');
-        var allowedFormats = ['pdf', 'png', 'doc', 'docx', 'jpg', 'jpeg'];
+        var fileNamesContainer = document.getElementById('fileNamesContainer');
+        var allowedFormats = ['pdf', 'doc', 'docx', 'png', 'jpeg', 'jpg'];
         var maxSizeMB = 5;
 
-        if (fileInput.files.length > 0) {
-            var fileName = fileInput.files[0].name;
-            var fileSizeMB = fileInput.files[0].size / (1024 * 1024);
+        // let dataTransfer = new DataTransfer();
+        // for (let i = 0; i < fileInput.files.length; i++) {
+        //     dataTransfer.items.add(fileInput.files[i]);
+        // }
+        // dataTransfer.items.add(file);
+        // fileInput.files = dataTransfer.files;
 
-            var fileExtension = fileName.split('.').pop().toLowerCase();
-            if (!allowedFormats.includes(fileExtension)) {
-                warningMessage.innerText = 'The selected file type is not allowed. Please select a file of one of the following types: pdf, png, doc, docx, jpg, jpeg';
-                document.getElementById('attachButton').disabled = true;
-            } else if (fileSizeMB > maxSizeMB) {
-                warningMessage.innerText = 'File size exceeds the limit of 5 MB. Please select a smaller file.';
-                document.getElementById('attachButton').disabled = true;
-            } else {
-                warningMessage.innerText = '';
-                document.getElementById('attachButton').disabled = false;
+        // Создаем элементы списка файлов и кнопок удаления
+        for (let i = 0; i < fileInput.files.length; i++) {
+            let file = fileInput.files[i];
+            let fileName = file.name;
+            let fileSizeMB = file.size / (1024 * 1024);
+
+            let fileExtension = fileName.split('.').pop().toLowerCase();
+            if (!allowedFormats.includes(fileExtension)
+                || fileSizeMB > maxSizeMB
+                || previousFiles.some(file => file.name === fileName)) {
+                alert('File ' + fileName + ' does not meet the criteria or has already been added. Please, make sure to select files of the following types: pdf, doc, docx, png, jpeg, jpg and not exceeding 5 MB in size.');
+            }else{
+                // Добавляем информацию о файле в массив
+                previousFiles.push(file);
+                // Создаем элемент списка файла
+                let fileItem = document.createElement('div');
+                fileItem.textContent = fileName;
+
+                // Создаем кнопку удаления файла
+                let removeButton = document.createElement('button');
+                removeButton.textContent = 'Remove';
+                removeButton.classList.add('remBut');
+                removeButton.onclick = function () {
+                    removeFile(this, fileName);
+                };
+                console.log('File loaded: ',fileName)
+
+                // Добавляем элементы в контейнер
+                fileNamesContainer.appendChild(fileItem);
+                fileItem.appendChild(removeButton);
             }
+        }
+        console.log("ACTUAL FILE LIST:", previousFiles);
+
+        let dataTransfer = new DataTransfer();
+        let newFileInput = createNewInput();
+        for (let i = 0; i < previousFiles.length; i++) {
+            dataTransfer.items.add(previousFiles[i]);
+        }
+        newFileInput.files = dataTransfer.files;
+        // Заменяем старый input на новый
+        fileInput.parentNode.replaceChild(newFileInput, fileInput);
+        console.log('INPUT FORM FILE LIST: ');
+        logFileList();
+    }
+
+    function removeFile(button, fileName) {
+
+        // Удаляем соответствующий файл из массива
+        console.log('DELETING FILE: ', fileName);
+        let index = previousFiles.findIndex(function (file) {
+            return file.name === fileName;
+        });
+        console.log('index:', index);
+        if (index !== -1) {
+            previousFiles.splice(index, 1);
+            console.log('File removed from array:', fileName, 'index:', index);
+            console.log('ACTUAL FILE LIST:', previousFiles);
         } else {
-            warningMessage.innerText = '';
-            document.getElementById('attachButton').disabled = false;
+            console.error('File not found in array:', fileName);
+        }
+
+        let dataTransfer = new DataTransfer();
+        let newFileInput = createNewInput();
+        let fileInput = document.getElementById('fileInput');
+        for (let i = 0; i < fileInput.files.length; i++) {
+            if (fileInput.files[i].name !== fileName) {
+                dataTransfer.items.add(fileInput.files[i]);
+            }
+        }
+        newFileInput.files = dataTransfer.files;
+
+        // Заменяем старый input на новый
+        fileInput.parentNode.replaceChild(newFileInput, fileInput);
+
+        console.log('INPUT FORM AFTER ELEMENT REMOVAL: ');
+        logFileList();
+        // Удаляем соответствующий файл из DOM
+        button.parentNode.remove();
+    }
+
+    function logFileList() {
+        let fileInput = document.getElementById('fileInput');
+        let files = fileInput.files;
+
+        for (let i = 0; i < files.length; i++) {
+            console.log('File ' + (i + 1) + ':', files[i].name);
         }
     }
 
-    function uploadFile() {
-        // Добавьте код для отправки файла на сервер
-        alert('File uploaded successfully!');
+    function createNewInput(){
+        let newFileInput = document.createElement('input');
+        newFileInput.type = 'file';
+        newFileInput.id = 'fileInput';
+        newFileInput.name = 'attachments';
+        newFileInput.multiple = true;
+        newFileInput.classList.add('file-input');
+        newFileInput.onchange = validateAndDisplayFiles;
+
+        return newFileInput;
     }
 </script>
 </body>

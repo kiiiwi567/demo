@@ -1,7 +1,10 @@
 package com.example.demo.services;
 
 import com.example.demo.config.JwtService;
+import com.example.demo.models.Attachment;
+import com.example.demo.models.Comment;
 import com.example.demo.models.Ticket;
+import com.example.demo.models.User;
 import com.example.demo.models.enums.TicketState;
 import com.example.demo.repositories.TicketRepository;
 import com.example.demo.repositories.UserRepository;
@@ -11,7 +14,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -35,10 +42,37 @@ public class TicketService {
         };
     }
     @Transactional
-    public void createTicket(Ticket newTicket, HttpServletRequest request) {
+    public void createTicket(Ticket newTicket,
+                             HttpServletRequest request,
+                             MultipartFile[] attachmentFiles,
+                             String commentText) {
         String ownerEmail = jwtService.extractUsername(jwtService.extractTokenFromRequest(request));
-        newTicket.setOwner(userRepository.findByEmail(ownerEmail).orElseThrow(() ->
-                new NoSuchElementException("Ticket is trying to be created by a user, who isn't in a DB: " + ownerEmail)));
+        User ticketCreator = userRepository.findByEmail(ownerEmail).orElseThrow(() ->
+                new NoSuchElementException("Ticket is trying to be created by a user, who isn't in a DB: " + ownerEmail));
+        newTicket.setOwner(ticketCreator);
         entityManager.persist(newTicket);
+        System.out.println("id after persisting:" + newTicket.getId());
+
+        if (attachmentFiles != null){
+            for (MultipartFile attachmentFile : attachmentFiles) {
+                Attachment attachment = new Attachment();
+                try {
+                    attachment.setContents(attachmentFile.getBytes());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                attachment.setTicket(newTicket);
+                attachment.setName(attachmentFile.getOriginalFilename());
+                entityManager.persist(attachment);
+            }
+        }
+
+        if (!commentText.isEmpty()){
+            Comment comment = new Comment();
+            comment.setText(commentText);
+            comment.setTicket(newTicket);
+            comment.setUser(ticketCreator);
+            entityManager.persist(comment);
+        }
     }
 }
