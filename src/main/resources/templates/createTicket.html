@@ -13,13 +13,13 @@
                 <div><h1>Create a ticket</h1></div>
                 <div class="leftcol"><h4>Category</h4></div>
                 <div>
-                    <select id="category" th:field="*{categoryId}" class="midcol" required>
+                    <select id="category" name="category" th:field="*{category}" class="midcol" required>
                         <option value="" selected disabled hidden>Select category</option>
-                        <option value="1">Application & Services</option>
-                        <option value="2">Benefits & Paperwork</option>
-                        <option value="3">Hardware & Software</option>
-                        <option value="4">People Management</option>
-                        <option value="5">Workplaces & Facilities</option>
+                        <option value=1>Application & Services</option>
+                        <option value=2>Benefits & Paperwork</option>
+                        <option value=3>Hardware & Software</option>
+                        <option value=4>People Management</option>
+                        <option value=5>Workplaces & Facilities</option>
                     </select>
                 </div>
                 <div class="leftcol"><h4>Name</h4></div>

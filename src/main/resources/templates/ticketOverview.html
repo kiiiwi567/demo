@@ -1,10 +1,182 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Ticket overview</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
+<div class="container">
+    <div class="overview-container">
+        <div class="grid-overview">
+            <div class="toprow-overview"><h1 th:text="'Ticket ' + ${ticket.id} + ': ' + ${ticket.name}"></h1></div>
+            <div class="leftcol"><h4>Category</h4></div>
+            <div class="midcol-overview" th:text="${ticket.category.name}"></div>
+            <div class="leftcol"><h4>Status</h4></div>
+            <div class="midcol-overview" th:text="${ticket.state}"></div>
+            <div class="leftcol"><h4>Created on</h4></div>
+            <div class="midcol-overview" th:text="${ticket.createdOn}"></div>
+            <div class="leftcol"><h4>Desired resolution date</h4></div>
+            <div class="midcol-overview" th:text="${ticket.desiredResolutionDate}"></div>
+            <div class="leftcol"><h4>Urgency</h4></div>
+            <div class="midcol-overview" th:text="${ticket.urgency}"></div>
+            <div class="leftcol"><h4>Description</h4></div>
+            <div class="midcol-overview" th:text="${ticket.description != null ? ticket.description : '-'}"></div>
+            <div class="leftcol"><h4>Owner</h4></div>
+            <div class="midcol-overview" th:text="${ticket.owner.firstName}"></div>
+            <div class="leftcol"><h4>Assignee</h4></div>
+            <div class="midcol-overview" th:text="${ticket.assignee != null ? ticket.assignee.firstName : 'None'}"></div>
+            <div class="leftcol"><h4>Approver</h4></div>
+            <div class="midcol-overview" th:text="${ticket.approver != null ? ticket.approver.firstName : 'None'}"></div>
+            <div class="leftcol"><h4>Attachments</h4></div>
+            <div class="midcol-overview"></div>
+        </div>
+        <div class="button-container-vert">
+            <form method="get" action="/allTickets">
+                <button class="button-blue">All tickets</button>
+            </form>
+            <button class="button-green">Edit ticket</button>
+            <button class="button-green">Leave comment</button>
+        </div>
+    </div>
+    <br>
+    <div class="button-container-hiscomm">
+        <button class="button-blue-hiscomm button-blue" id="histButton">History</button>
+        <button class="button-blue-hiscomm button-blue" id="commButton">Comments</button>
+    </div>
+    <table id="history">
+        <thead>
+        <tr>
+            <th data-type="number" data-order="1">Date <span class="arrow"></span></th>
+            <th data-type="string" data-order="1">User <span class="arrow"></span></th>
+            <th data-type="string" data-order="1">Action <span class="arrow"></span></th>
+            <th data-type="string" data-order="1">Description <span class="arrow"></span></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="historyRow : ${ticket.historyRecords}">
+            <td th:text="${historyRow.date}"></td>
+            <td th:text="${historyRow.user.firstName}"></td>
+            <td th:text="${historyRow.action}"></td>
+            <td th:text="${historyRow.description}"></td>
+        </tr>
+        </tbody>
+    </table>
+    <table id="comments">
+        <thead>
+        <tr>
+            <th data-type="number" data-order="1">Date <span class="arrow"></span></th>
+            <th data-type="string" data-order="1">User <span class="arrow"></span></th>
+            <th data-type="string" data-order="1">Comment <span class="arrow"></span></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="comment : ${ticket.comments}">
+            <td th:text="${comment.date}"></td>
+            <td th:text="${comment.user.firstName}"></td>
+            <td th:text="${comment.text}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Get references to both tables by their ids
+    let historyTable = document.getElementById('history');
+    let commentsTable = document.getElementById('comments');
+    let historyButton = document.getElementById('histButton');
+    let commentsButton = document.getElementById('commButton');
+    historyTable.style.display = 'table'; // hide historyTable
+    commentsTable.style.display = 'none'; // show commentsTable
+
+    historyButton.onclick = function () {
+        toggleTablesVisibility(historyTable, commentsTable, historyButton, commentsButton);
+    };
+
+    commentsButton.onclick = function () {
+        toggleTablesVisibility(commentsTable, historyTable, commentsButton, historyButton);
+    };
+
+    function toggleTablesVisibility(showTable, hideTable, activeButton, inactiveButton) {
+        showTable.style.display = 'table';
+        hideTable.style.display = 'none';
+        switchButtonSelection(activeButton, inactiveButton);
+    }
+
+    function switchButtonSelection(activeButton, inactiveButton){
+        activeButton.style = 'background-color: #fff; color: #3498db; border: 2px solid #3498db';
+        inactiveButton.style = 'background-color: #3498db; color: #fff; border:none'
+    }
+
+    historyTable.onclick = function (e) {
+        handleTableClick(e, historyTable);
+    };
+
+    commentsTable.onclick = function (e) {
+        handleTableClick(e, commentsTable);
+    };
+
+    function handleTableClick(e, table) {
+        if (e.target.tagName != 'TH') return;
+
+        let th = e.target;
+        let order = parseInt(th.dataset.order);
+
+        // если ячейка TH, тогда сортировать
+        // cellIndex - это номер ячейки th:
+        //   0 для первого столбца
+        //   1 для второго и т.д.
+        sortGrid(th.cellIndex, th.dataset.type, order, table);
+
+        // обновить порядок сортировки
+        th.dataset.order = order === 1 ? -1 : 1;
+        updateArrows(th, order);
+    }
+
+    function sortGrid(colNum, type, order, table) {
+        let tbody = table.querySelector('tbody');
+
+        let rowsArray = Array.from(tbody.rows);
+
+        // compare(a, b) сравнивает две строки, нужен для сортировки
+        let compare;
+
+        switch (type) {
+            case 'number':
+                compare = function (rowA, rowB) {
+                    return (rowA.cells[colNum].innerHTML - rowB.cells[colNum].innerHTML) * order;
+                };
+                break;
+            case 'string':
+                compare = function (rowA, rowB) {
+                    return rowA.cells[colNum].innerHTML.localeCompare(rowB.cells[colNum].innerHTML) * order;
+                };
+                break;
+            case 'urgency':
+                const urgencyOrder = { 'Critical': 0, 'High': 1, 'Average': 2, 'Low': 3 };
+                compare = function (rowA, rowB) {
+                    return (urgencyOrder[rowA.cells[colNum].innerHTML] - urgencyOrder[rowB.cells[colNum].innerHTML]) * order;
+                };
+                break;
+        }
+
+        rowsArray.sort(compare);
+        tbody.innerHTML = ''; // Clear the tbody
+        tbody.append(...rowsArray);
+    }
+
+    function updateArrows(clickedTh, order) {
+        // обновить стрелку у всех заголовков, кроме того, по которому кликнули
+        Array.from(clickedTh.parentNode.children).forEach(th => {
+            const arrow = th.querySelector('.arrow');
+            if (th !== clickedTh) {
+                arrow.textContent = '';
+            } else {
+                arrow.textContent = order === 1 ? '▲' : '▼';
+            }
+        });
+    }
+</script>
 
 </body>
 </html>

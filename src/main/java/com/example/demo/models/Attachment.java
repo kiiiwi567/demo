@@ -16,9 +16,8 @@ public class Attachment {
     @Column(name = "contents")
     private byte[] contents;
 
-    @ManyToOne
-    @JoinColumn(name = "ticket_id")
-    private Ticket ticket;
+    @Column(name = "ticket_id")
+    private Integer ticketId;
 
     @Column(name = "name")
     private String name;

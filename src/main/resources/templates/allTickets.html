@@ -35,7 +35,9 @@
         <tbody>
         <tr th:each="ticket : ${tickets}">
             <td th:text="${ticket.id}"></td>
-            <td th:text="${ticket.name}"></td>
+            <td>
+                <a th:href="@{/ticketOverview/{id}(id=${ticket.id})}" th:text="${ticket.name}"></a>
+            </td>
             <td th:text="${ticket.createdOn}"></td>
             <td th:text="${ticket.desiredResolutionDate}"></td>
             <td th:text="${ticket.urgency}"></td>
@@ -146,14 +148,15 @@
 
         rows.forEach(row => {
             let ticketId = parseInt(row.firstElementChild.innerText);
-            //console.log("current id: ",ticketId);
+            console.log("current id: ",ticketId);
             let ticket = tickets.find(ticket => ticket.id === ticketId);
 
             if (ticket) {
                 let ticketOwnerEmail = ticket.owner.email;
                 let ticketStatus = ticket.state;
                 let ticketAssigneeEmail = ticket.assignee.email;
-                //console.log("state: ",ticketStatus,", owner's email: ", ticketOwnerEmail, ", assignee's email: ", ticketAssigneeEmail);
+                let ticketApproverEmail = ticket.approver.email;
+                console.log("state: ",ticketStatus,", owner's email: ", ticketOwnerEmail, ", assignee's email: ", ticketAssigneeEmail);
 
                 switch (currentUserRole) {
                     case 'Employee':
@@ -164,7 +167,7 @@
                         }
                         break;
                     case 'Manager':
-                        if (currentUserEmail === ticketOwnerEmail && ticketStatus === 'Approved') {
+                        if (currentUserEmail === ticketOwnerEmail && (ticketStatus === 'Approved' && ticketApproverEmail === currentUserEmail)) {
                             row.style.display = '';
                         } else {
                             row.style.display = 'none';

@@ -31,6 +31,8 @@ public class AuthenticationController {
         AuthenticationResponse authenticationResponse = service.authenticate(request);
         Cookie cookie = new Cookie("jwtToken", authenticationResponse.getToken());
         cookie.setPath("/");
+        cookie.setMaxAge(-1);
+        cookie.setHttpOnly(true);
         response.addCookie(cookie);
         return new RedirectView("/allTickets");
     }

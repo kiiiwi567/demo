@@ -14,11 +14,22 @@ body {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Тень для подчеркивания области */
 }
 
-.button-container{
+.button-container, .button-container-vert{
     width:100%;
     display:flex;
     flex-wrap: wrap;
     margin: 20px 0;
+}
+
+.button-container-vert{
+    flex-direction: column;
+    width: 20%;
+}
+
+.button-container-hiscomm{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
 }
 
 h1, p {
@@ -63,9 +74,12 @@ button:hover {
 }
 
 /* Пример кнопок разных цветов */
-.button-blue {
+.button-blue{
     background-color: #3498db; /* Синий цвет */
     color: #fff;
+}
+.button-blue-hiscomm{
+    min-width: 50%;
 }
 
 .button-green {
@@ -101,8 +115,24 @@ th{
     cursor: pointer;
 }
 
+tr{
+    min-height: 40px;
+}
+#history th:first-child, #comments th:first-child{
+    width: 20%
+}
+
 th:first-child{
     width: 5%;
+}
+
+#history th:last-child{
+    max-width: 40%;
+    width: 40%;
+}
+#comments th:last-child{
+    max-width: 60%;
+    width: 60%;
 }
 
 th:last-child{
@@ -122,10 +152,19 @@ td{
     box-sizing: border-box;
 }
 
-.grid{
+.grid, .grid-overview{
     display: grid;
     grid-template-columns: 1fr 2fr;
     grid-row-gap: 15px;
+}
+.grid-overview{
+    min-width: 70%;
+    grid-row-gap: 5px;
+}
+
+.toprow-overview{
+    grid-column-start: 1;
+    grid-column-end: 3;
 }
 
 .leftcol{
@@ -136,9 +175,12 @@ td{
 h4{
     margin-top: 15px;
 }
-.midcol{
+.midcol, .midcol-overview{
     grid-column-start: 2;
     margin: 5px 0 0 20px;
+}
+.midcol-overview{
+    margin-top: 15px;
 }
 select, .inputCr, textarea{
     font-family: 'Roboto', sans-serif;
@@ -189,7 +231,7 @@ select, .inputCr, textarea{
     margin-left: 10px;
 }
 
-.create-container {
+.create-container, .overview-container {
     display: flex;
     justify-content: space-between;
     flex-direction: row;

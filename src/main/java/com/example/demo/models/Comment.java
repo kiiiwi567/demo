@@ -24,7 +24,6 @@ public class Comment {
     @Column(name = "date")
     private LocalDate date = LocalDate.now();
 
-    @ManyToOne
-    @JoinColumn(name = "ticket_id")
-    private Ticket ticket;
+    @Column(name = "ticket_id")
+    private Integer ticketId;
 }

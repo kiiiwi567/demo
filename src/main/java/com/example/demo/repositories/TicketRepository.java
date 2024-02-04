@@ -28,4 +28,7 @@ public interface TicketRepository extends JpaRepository <Ticket, Integer> {
             "OR ((t.assignee.email = :engineerEmail) AND (t.state in ('In_progress', 'Done'))) " +
             "ORDER BY t.urgency, t.desiredResolutionDate")
     List<Ticket> getAllTicketsForEngineer(@Param("engineerEmail") String engineerEmail);
+
+    @Query("SELECT t FROM Ticket t WHERE t.id = :ticketId")
+    Ticket getTicketForOverviewById(@Param ("ticketId") Integer ticketId);
 }

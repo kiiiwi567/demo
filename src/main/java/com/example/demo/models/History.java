@@ -23,8 +23,9 @@ public class History {
     @Column(name = "action")
     private String action;
 
-    @Column(name = "user_id")
-    private Integer userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(name = "description")
     private String description;

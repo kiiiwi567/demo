@@ -49,8 +49,9 @@ public class Ticket {
     @Type(PostgreSQLEnumType.class)
     private TicketState state = TicketState.New;
 
-    @Column(name = "category_id")
-    private Integer categoryId;
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "urgency", columnDefinition = "ticketUrgency")
@@ -62,10 +63,17 @@ public class Ticket {
     private User approver;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "ticket_id")
     private List<Comment> comments;
     
     @JsonIgnore
-    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "ticket_id")
     private List<Attachment> attachments;
+
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "ticket_id")
+    private List<History> historyRecords;
 }

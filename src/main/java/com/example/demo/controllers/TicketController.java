@@ -34,14 +34,21 @@ public class TicketController {
 
     @InitBinder("newTicket")
     public void initBinder(WebDataBinder binder) {
-        binder.setDisallowedFields("attachments");
+        binder.setDisallowedFields("attachments","category");
     }
     @PostMapping(value = "/createTicket")
     public String createTicket(HttpServletRequest request,
                                @Valid @ModelAttribute("newTicket") Ticket newTicket,
                                @RequestParam(name = "attachments",required = false) MultipartFile[] attachments,
+                               @RequestParam(name = "category") Integer categoryId,
                                @RequestParam(required = false) String comment){
-        ticketService.createTicket(newTicket, request, attachments, comment);
+        ticketService.createTicket(newTicket, request, attachments, comment, categoryId);
         return "redirect:/allTickets";
+    }
+
+    @GetMapping("/ticketOverview/{id}")
+    public String ticketOverview(@PathVariable Integer id, Model model){
+        model.addAttribute("ticket", ticketService.getTicketForOverviewById(id));
+        return "ticketOverview";
     }
 }
