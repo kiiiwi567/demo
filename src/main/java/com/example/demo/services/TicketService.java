@@ -1,11 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.config.JwtService;
-import com.example.demo.models.Attachment;
-import com.example.demo.models.Comment;
-import com.example.demo.models.Ticket;
-import com.example.demo.models.User;
-import com.example.demo.models.enums.TicketState;
+import com.example.demo.models.*;
 import com.example.demo.repositories.CategoryRepository;
 import com.example.demo.repositories.TicketRepository;
 import com.example.demo.repositories.UserRepository;
@@ -16,10 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 

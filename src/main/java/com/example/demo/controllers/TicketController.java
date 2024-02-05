@@ -1,11 +1,17 @@
 package com.example.demo.controllers;
 
 import com.example.demo.config.JwtService;
+import com.example.demo.models.Attachment;
 import com.example.demo.models.Ticket;
+import com.example.demo.services.AttachmentService;
 import com.example.demo.services.TicketService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
@@ -17,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class TicketController {
     private final TicketService ticketService;
     private final JwtService jwtService;
+    private final AttachmentService attachmentService;
 
     @GetMapping("/allTickets")
     public String allTicketsOverview(Model model, HttpServletRequest request){
@@ -50,5 +57,14 @@ public class TicketController {
     public String ticketOverview(@PathVariable Integer id, Model model){
         model.addAttribute("ticket", ticketService.getTicketForOverviewById(id));
         return "ticketOverview";
+    }
+
+    @GetMapping("/download/{fileName}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName) {
+        Attachment attachment = attachmentService.getAttachmentByName(fileName);
+        ByteArrayResource resource = new ByteArrayResource(attachment.getContents());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
+                .body(resource);
     }
 }
