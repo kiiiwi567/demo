@@ -48,6 +48,7 @@
     </table>
 </div>
 <script>
+    let tickets = document.getElementById('tickets');
 
     tickets.onclick = function(e) {
         if (e.target.tagName != 'TH') return;
@@ -67,6 +68,7 @@
     };
 
     function sortGrid(colNum, type, order) {
+        console.log(colNum);
         let tbody = tickets.querySelector('tbody');
 
         let rowsArray = Array.from(tbody.rows);
@@ -98,8 +100,9 @@
     }
 
     function updateArrows(clickedTh, order) {
-        // обновить стрелку у всех заголовков, кроме того, по которому кликнули
-        Array.from(tickets.querySelectorAll('th')).forEach(th => {
+        // Обновить стрелки у всех заголовков, кроме того, по которому кликнули
+        const thList = document.querySelectorAll('th[data-order]');
+        thList.forEach(th => {
             const arrow = th.querySelector('.arrow');
             if (th !== clickedTh) {
                 arrow.textContent = '';

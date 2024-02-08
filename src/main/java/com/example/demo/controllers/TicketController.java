@@ -17,6 +17,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -78,9 +80,21 @@ public class TicketController {
     public String saveEditedTicket(HttpServletRequest request,
                                @Valid @ModelAttribute("newTicket") Ticket editedTicket,
                                @RequestParam(name = "attachments",required = false) MultipartFile[] attachments,
-                               @RequestParam(name = "category") Integer categoryId) {
+                               @RequestParam(name = "category") Integer categoryId,
+                                   RedirectAttributes attributes) {
         ticketService.editTicket(editedTicket, request, attachments, categoryId);
-        return "redirect:/allTickets";
+        attributes.addAttribute("id", editedTicket.getId());
+        return "redirect:/ticketOverview/{id}";
+    }
+
+    @PostMapping(value = "/leaveComment/{id}")
+    public String leaveComment(HttpServletRequest request,
+                               @RequestParam String commentText,
+                               @PathVariable Integer id,
+                                RedirectAttributes attributes){
+        ticketService.leaveComment(request, commentText, id);
+        attributes.addAttribute("id", id);
+        return "redirect:/ticketOverview/{id}";
     }
 
     @GetMapping("/download/{ticketId}/{fileName}")

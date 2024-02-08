@@ -58,7 +58,7 @@ public class TicketService {
         }
 
         if (commentText!=null && !commentText.isEmpty() ){
-            addComment(commentText, newTicket, ticketCreator);
+            addComment(commentText, newTicket.getId(), ticketCreator);
         }
     }
 
@@ -133,11 +133,18 @@ public class TicketService {
         }
         return correctList;
     }
+    @Transactional
+    public void leaveComment(HttpServletRequest request, String commentText, Integer ticketId) {
+        String currentUserEmail = jwtService.extractUsername(jwtService.extractTokenFromRequest(request));
+        User currentUser = userRepository.findByEmail(currentUserEmail).orElseThrow(() ->
+                new NoSuchElementException("Ticket is trying to be edited by a user, who isn't in a DB: " + currentUserEmail));
+        addComment(commentText, ticketId, currentUser);
+    }
 
-    public void addComment(String commentText, Ticket newTicket, User currentUser){
+    public void addComment(String commentText, Integer ticketId, User currentUser){
         Comment comment = new Comment();
         comment.setText(commentText);
-        comment.setTicketId(newTicket.getId());
+        comment.setTicketId(ticketId);
         comment.setUser(currentUser);
         entityManager.merge(comment);
     }

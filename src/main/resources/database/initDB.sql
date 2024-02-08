@@ -45,7 +45,7 @@ create table if not exists history
 (
     id serial primary key,
     ticket_id int references ticket(id),
-    "date" date,
+    "timestamp" timestamp without time zone,
     "action" varchar(15),
     user_id int references "user" (id),
     description varchar(100)
@@ -56,7 +56,7 @@ create table if not exists "comment"
     id serial primary key,
     user_id int references "user" (id),
     "text" varchar(500),
-    "date" date,
+    "timestamp" timestamp without time zone,
     ticket_id int references ticket (id)
 );
 

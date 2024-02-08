@@ -2,8 +2,7 @@ package com.example.demo.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -21,8 +20,8 @@ public class Comment {
     @Column(name = "text")
     private String text;
 
-    @Column(name = "date")
-    private LocalDate date = LocalDate.now();
+    @Column(name = "timestamp")
+    private LocalDateTime timestamp = LocalDateTime.now();
 
     @Column(name = "ticket_id")
     private Integer ticketId;

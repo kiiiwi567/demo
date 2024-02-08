@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -17,8 +18,8 @@ public class History {
     @Column(name = "ticket_id")
     private Integer ticketId;
 
-    @Column(name = "date")
-    private LocalDate date;
+    @Column(name = "timestamp")
+    private LocalDateTime timestamp = LocalDateTime.now();
 
     @Column(name = "action")
     private String action;

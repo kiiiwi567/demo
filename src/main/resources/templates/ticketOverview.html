@@ -37,13 +37,17 @@
             </div>
         </div>
         <div class="button-container-vert">
-            <form method="get" action="/allTickets">
+            <form class="form-overview" method="get" action="/allTickets">
                 <button class="button-blue" type="submit">All tickets</button>
             </form>
-            <form method="get" th:action="@{'/editTicket/' + ${ticket.id}}">
+            <form class="form-overview" method="get" th:action="@{'/editTicket/' + ${ticket.id}}">
                 <button class="button-green" type="submit">Edit ticket</button>
             </form>
-            <button class="button-green">Leave comment</button>
+            <button class="button-green" id="leaveCommentButton">Write a comment</button>
+            <form id="commentDiv" method="post" th:action="@{'/leaveComment/' + ${ticket.id}}">
+                <textarea id="commentTextArea" name="commentText" minlength="1" maxlength="500" required placeholder="Write your comment here..."></textarea>
+                <button class="button-orange" id="addCommentButton" type="submit">Add comment to ticket</button>
+            </form>
         </div>
     </div>
     <br>
@@ -54,7 +58,7 @@
     <table id="history">
         <thead>
         <tr>
-            <th data-type="number" data-order="1">Date <span class="arrow"></span></th>
+            <th data-type="date" data-order="1">Time <span class="arrow"></span></th>
             <th data-type="string" data-order="1">User <span class="arrow"></span></th>
             <th data-type="string" data-order="1">Action <span class="arrow"></span></th>
             <th data-type="string" data-order="1">Description <span class="arrow"></span></th>
@@ -62,7 +66,7 @@
         </thead>
         <tbody>
         <tr th:each="historyRow : ${ticket.historyRecords}">
-            <td th:text="${historyRow.date}"></td>
+            <td th:text="${historyRow.timestamp}"></td>
             <td th:text="${historyRow.user.firstName}"></td>
             <td th:text="${historyRow.action}"></td>
             <td th:text="${historyRow.description}"></td>
@@ -72,14 +76,14 @@
     <table id="comments">
         <thead>
         <tr>
-            <th data-type="number" data-order="1">Date <span class="arrow"></span></th>
+            <th data-type="date" data-order="1">Time <span class="arrow"></span></th>
             <th data-type="string" data-order="1">User <span class="arrow"></span></th>
             <th data-type="string" data-order="1">Comment <span class="arrow"></span></th>
         </tr>
         </thead>
         <tbody>
         <tr th:each="comment : ${ticket.comments}">
-            <td th:text="${comment.date}"></td>
+            <td th:text="${comment.timestamp}"></td>
             <td th:text="${comment.user.firstName}"></td>
             <td th:text="${comment.text}"></td>
         </tr>
@@ -87,15 +91,34 @@
     </table>
     <button id="rowVisibility" class="button-grey" onclick="showFullTable()">Show all</button>
 </div>
+<script type="text/javascript">
+    function formatDate(timestamp) {
+        const date = new Date(timestamp);
+        const options = { year: 'numeric', month: 'long', day: '2-digit', hour: 'numeric', minute: 'numeric' };
+        return date.toLocaleDateString('en-UK', options);
+    }
 
+    const timestampCells = document.querySelectorAll('td:first-child');
+    timestampCells.forEach(cell => {
+        const timestamp = cell.textContent;
+        cell.textContent = formatDate(timestamp);
+    });
+</script>
 <script>
-    // Get references to both tables by their ids
+    document.addEventListener('DOMContentLoaded', function () {
+        sortGrid(0,'date',-1,document.getElementById('history'));
+        sortGrid(0,'date',-1,document.getElementById('comments'));
+    })
+
+    let leaveCommentButton = document.getElementById('leaveCommentButton')
+    let commentDiv = document.getElementById('commentDiv');
     let historyTable = document.getElementById('history');
     let commentsTable = document.getElementById('comments');
     let historyButton = document.getElementById('histButton');
     let commentsButton = document.getElementById('commButton');
     historyTable.style.display = 'table'; // hide historyTable
     commentsTable.style.display = 'none'; // show commentsTable
+    commentDiv.style.display = 'none';
 
     historyButton.onclick = function () {
         toggleTablesVisibility(historyTable, commentsTable, historyButton, commentsButton);
@@ -105,6 +128,14 @@
         toggleTablesVisibility(commentsTable, historyTable, commentsButton, historyButton);
     };
 
+    leaveCommentButton.onclick = function () {
+        if (commentDiv.style.display === 'none') {
+            commentDiv.style.display = 'block';
+        }
+        else {
+            commentDiv.style.display = 'none';
+        }
+    }
     function toggleTablesVisibility(showTable, hideTable, activeButton, inactiveButton) {
         showTable.style.display = 'table';
         hideTable.style.display = 'none';
@@ -130,10 +161,6 @@
         let th = e.target;
         let order = parseInt(th.dataset.order);
 
-        // если ячейка TH, тогда сортировать
-        // cellIndex - это номер ячейки th:
-        //   0 для первого столбца
-        //   1 для второго и т.д.
         sortGrid(th.cellIndex, th.dataset.type, order, table);
 
         // обновить порядок сортировки
@@ -143,7 +170,10 @@
 
     function sortGrid(colNum, type, order, table) {
         let tbody = table.querySelector('tbody');
-
+        let rows = tbody.querySelectorAll('tr');
+        rows.forEach(row => {
+            row.style.display = 'table-row';
+        });
         let rowsArray = Array.from(tbody.rows);
 
         // compare(a, b) сравнивает две строки, нужен для сортировки
@@ -160,10 +190,42 @@
                     return rowA.cells[colNum].innerHTML.localeCompare(rowB.cells[colNum].innerHTML) * order;
                 };
                 break;
-            case 'urgency':
-                const urgencyOrder = { 'Critical': 0, 'High': 1, 'Average': 2, 'Low': 3 };
+            case 'date':
                 compare = function (rowA, rowB) {
-                    return (urgencyOrder[rowA.cells[colNum].innerHTML] - urgencyOrder[rowB.cells[colNum].innerHTML]) * order;
+                    const dateTextA = rowA.cells[colNum].innerHTML;
+                    const dateTextB = rowB.cells[colNum].innerHTML;
+                    const monthNames = {
+                        'January': 0,
+                        'February': 1,
+                        'March': 2,
+                        'April': 3,
+                        'May': 4,
+                        'June': 5,
+                        'July': 6,
+                        'August': 7,
+                        'September': 8,
+                        'October': 9,
+                        'November': 10,
+                        'December': 11
+                    };
+                    const parseDate = function (dateText) {
+
+                        const parts = dateText.split(' ');
+
+                        const day = parseInt(parts[0]);
+                        const month = monthNames[parts[1]];
+                        const year = parseInt(parts[2]);
+
+                        const timeParts = parts[4].split(':');
+                        const hours = parseInt(timeParts[0]);
+                        const minutes = parseInt(timeParts[1]);
+
+                        return new Date(year, month, day, hours, minutes);
+                    };
+
+                    const dateA = parseDate(dateTextA);
+                    const dateB = parseDate(dateTextB);
+                    return (dateA - dateB) * order;
                 };
                 break;
         }
@@ -171,6 +233,27 @@
         rowsArray.sort(compare);
         tbody.innerHTML = ''; // Clear the tbody
         tbody.append(...rowsArray);
+        let rowVisibilityButton = document.getElementById('rowVisibility');
+        let sixthRows = document.querySelectorAll('#history tr:nth-child(6), #comments tr:nth-child(6)');
+        if (rowVisibilityButton.textContent === 'Show all'){
+            let additionalRows = document.querySelectorAll('#history tr:nth-child(n+7), #comments tr:nth-child(n+7)');
+            additionalRows.forEach(function (row) {
+                row.style.display = 'none';
+            })
+            sixthRows.forEach(function (row) {
+                if (row.classList.contains('hide-pseudo')){
+                    row.classList.remove('hide-pseudo');
+                }
+            })
+        }
+        else{
+            console.log('ELSE CHOSEN');
+            sixthRows.forEach(function (row) {
+                if (!row.classList.contains('hide-pseudo')){
+                    row.classList.add('hide-pseudo');
+                }
+            })
+        }
     }
 
     function updateArrows(clickedTh, order) {
@@ -184,10 +267,10 @@
             }
         });
     }
-    let sixthRows = document.querySelectorAll('#history tr:nth-child(6), #comments tr:nth-child(6)');
-    let additionalRows = document.querySelectorAll('#history tr:nth-child(n+7), #comments tr:nth-child(n+7)');
-    let rowVisibilityButton = document.getElementById('rowVisibility');
     function showFullTable(){
+        let sixthRows = document.querySelectorAll('#history tr:nth-child(6), #comments tr:nth-child(6)');
+        let additionalRows = document.querySelectorAll('#history tr:nth-child(n+7), #comments tr:nth-child(n+7)');
+        let rowVisibilityButton = document.getElementById('rowVisibility');
         if (rowVisibilityButton.textContent === 'Show all') {
             additionalRows.forEach(function (row) {
                 row.style.display = 'table-row';
