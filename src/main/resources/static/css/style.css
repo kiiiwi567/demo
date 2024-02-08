@@ -35,7 +35,9 @@ body {
 h1, p {
     color: #333; /* Цвет текста */
 }
-
+a{
+    text-decoration: none;
+}
 .form-control{
     margin: 5px auto;
     padding: 1px 5px;
@@ -92,6 +94,16 @@ button:hover {
     color: #fff;
 }
 
+.button-grey{
+    background-color: gainsboro;
+    color: black;
+}
+
+#rowVisibility{
+    margin: 10px 0 0 0;
+    min-width: 100%;
+}
+
 .button-red {
     background-color: #e74c3c; /* Красный цвет */
     color: #fff;
@@ -106,18 +118,58 @@ table{
     border-radius: 5px;
     border: 1px solid gainsboro;
     table-layout: fixed;
+    word-wrap: break-word;
+}
+th, td{
+    border: 1px solid #ccc; /* Добавляем границы ячеек */
+    box-sizing: border-box; /* Учитываем границы в общей ширине */
+    position: relative; /* Для корректного отображения псевдоэлементов */
 }
 
 th{
     background-color: gainsboro;
     height: 30px;
-    max-width: 20%;
+    /*max-width: 20%;*/
     cursor: pointer;
+}
+#history th, #comments th{
+    max-width: none;
 }
 
 tr{
     min-height: 40px;
+    min-width: 100%;
 }
+
+td{
+    min-width: 10%;
+    /*max-width: 20%;*/
+    text-align: center;
+    padding: 10px;
+}
+
+#history tr:nth-child(n+7), #comments tr:nth-child(n+7){
+    display: none;
+}
+#history tr:nth-child(6), #comments tr:nth-child(6){
+    position: relative;
+}
+
+#history tr:nth-child(6)::after, #comments tr:nth-child(6)::after{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.2) 0%,rgba(255,255,255,1) 70%);
+}
+
+.hide-pseudo::after{
+    display: none;
+}
+
 #history th:first-child, #comments th:first-child{
     width: 20%
 }
@@ -130,24 +182,31 @@ th:first-child{
     max-width: 40%;
     width: 40%;
 }
+#history th:nth-child(2){
+    max-width: 20%;
+    width: 20%;
+}
 #comments th:last-child{
     max-width: 60%;
     width: 60%;
 }
-
-th:last-child{
-    width: 150px;
+#comments th:nth-child(2){
+    max-width: 20%;
+    width: 20%;
 }
 
-td{
-    min-width: 10%;
-    max-width: 20%;
-    text-align: center;
+
+th:last-child{
+    width: 200px;
+}
+
+td:last-child{
+    display: flex;
+    justify-content: center;
 }
 
 .actBut {
     min-width: auto;
-    width: 90%;
     display: block;
     box-sizing: border-box;
 }
@@ -242,6 +301,16 @@ select, .inputCr, textarea{
 .remBut{
     min-width: 80px;
     margin-left: 20px
+}
+
+.attachments-for-dwnld{
+    background-color: gainsboro;
+    border-radius: 3px;
+    margin-bottom: 10px;
+    padding: 10px;
+    max-width: 50%;
+    display: flex;
+    justify-content: space-between;
 }
 
 

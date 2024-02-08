@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -50,26 +51,95 @@ public class TicketService {
         entityManager.persist(newTicket);
 
         if (attachmentFiles != null){
-            for (MultipartFile attachmentFile : attachmentFiles) {
-                Attachment attachment = new Attachment();
-                try {
-                    attachment.setContents(attachmentFile.getBytes());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                attachment.setTicketId(newTicket.getId());
-                attachment.setName(attachmentFile.getOriginalFilename());
+            List<Attachment> attachments = addAttachmentsToList(attachmentFiles, newTicket.getId());
+            for (Attachment attachment : attachments){
                 entityManager.persist(attachment);
             }
         }
 
-        if (!commentText.isEmpty()){
-            Comment comment = new Comment();
-            comment.setText(commentText);
-            comment.setTicketId(newTicket.getId());
-            comment.setUser(ticketCreator);
-            entityManager.persist(comment);
+        if (commentText!=null && !commentText.isEmpty() ){
+            addComment(commentText, newTicket, ticketCreator);
         }
+    }
+
+    @Transactional
+    public void editTicket(Ticket newTicket,
+                             HttpServletRequest request,
+                             MultipartFile[] attachmentFiles,
+                             Integer categoryId) {
+        Ticket oldTicket = ticketRepository.getTicketForOverviewById(newTicket.getId());
+        String currentUserEmail = jwtService.extractUsername(jwtService.extractTokenFromRequest(request));
+        userRepository.findByEmail(currentUserEmail).orElseThrow(() ->
+                new NoSuchElementException("Ticket is trying to be edited by a user, who isn't in a DB: " + currentUserEmail));
+        newTicket.setCategory(categoryRepository.getCategoryById(categoryId));
+        newTicket.setCreatedOn(oldTicket.getCreatedOn());
+        newTicket.setState(oldTicket.getState());
+        newTicket.setApprover(oldTicket.getApprover());
+        newTicket.setAssignee(oldTicket.getAssignee());
+        newTicket.setOwner(oldTicket.getOwner());
+        newTicket.setHistoryRecords(oldTicket.getHistoryRecords());
+        newTicket.setComments(oldTicket.getComments());
+
+        List<Attachment> ticketAttachmentList = addAttachmentsToList(attachmentFiles, newTicket.getId());
+        removeNoLongerValidAttachments(ticketAttachmentList, oldTicket.getAttachments());
+        ticketAttachmentList = replaceEmptyAttachments(ticketAttachmentList, oldTicket.getAttachments());
+
+        newTicket.setAttachments(ticketAttachmentList);
+        entityManager.merge(newTicket);
+    }
+
+    public List<Attachment> addAttachmentsToList(MultipartFile[] attachmentFiles, Integer ticketId){
+        List<Attachment> attachmentList = new ArrayList<>();
+        for (MultipartFile attachmentFile : attachmentFiles) {
+            attachmentList.add(MultipartToAttachment(attachmentFile, ticketId));
+        }
+        return attachmentList;
+    }
+
+    public Attachment MultipartToAttachment(MultipartFile file, Integer ticketId){
+        Attachment attachment = new Attachment();
+        try {
+            attachment.setContents(file.getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        attachment.setTicketId(ticketId);
+        attachment.setName(file.getOriginalFilename());
+        return attachment;
+    }
+
+    public void removeNoLongerValidAttachments(List<Attachment> validAttachments, List<Attachment> currentAttachments ){
+        for (Attachment attachmentToCheck : currentAttachments) {
+            if(validAttachments.stream().noneMatch(attachment -> attachment.getName().equals(attachmentToCheck.getName()))){
+                entityManager.remove(attachmentToCheck);
+            }
+        }
+    }
+
+    public List<Attachment> replaceEmptyAttachments(List<Attachment> attachmentsToFix, List<Attachment> oldAttachments) {
+        List<Attachment> correctList = new ArrayList<>();
+        for (Attachment attachment : attachmentsToFix) {
+            if (attachment.getContents().length == 0) {
+                for (Attachment oldAttachment : oldAttachments) {
+                    if (oldAttachment.getName().equals(attachment.getName())) {
+                        correctList.add(oldAttachment);
+                        break;
+                    }
+                }
+            }
+            else{
+                correctList.add(attachment);
+            }
+        }
+        return correctList;
+    }
+
+    public void addComment(String commentText, Ticket newTicket, User currentUser){
+        Comment comment = new Comment();
+        comment.setText(commentText);
+        comment.setTicketId(newTicket.getId());
+        comment.setUser(currentUser);
+        entityManager.merge(comment);
     }
 
     public Ticket getTicketForOverviewById(Integer ticketId) {

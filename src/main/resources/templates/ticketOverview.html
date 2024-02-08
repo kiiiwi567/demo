@@ -29,13 +29,20 @@
             <div class="leftcol"><h4>Approver</h4></div>
             <div class="midcol-overview" th:text="${ticket.approver != null ? ticket.approver.firstName : 'None'}"></div>
             <div class="leftcol"><h4>Attachments</h4></div>
-            <div class="midcol-overview"></div>
+            <div class="midcol-overview">
+                <a class="attachments-for-dwnld" th:href="@{'/download/' + ${ticket.id} + '/' + ${attachment.name}}" th:each="attachment : ${ticket.attachments}">
+                    <div th:text="${attachment.name}"> </div>
+                    <div>&#129147;</div>
+                </a>
+            </div>
         </div>
         <div class="button-container-vert">
             <form method="get" action="/allTickets">
-                <button class="button-blue">All tickets</button>
+                <button class="button-blue" type="submit">All tickets</button>
             </form>
-            <button class="button-green">Edit ticket</button>
+            <form method="get" th:action="@{'/editTicket/' + ${ticket.id}}">
+                <button class="button-green" type="submit">Edit ticket</button>
+            </form>
             <button class="button-green">Leave comment</button>
         </div>
     </div>
@@ -78,6 +85,7 @@
         </tr>
         </tbody>
     </table>
+    <button id="rowVisibility" class="button-grey" onclick="showFullTable()">Show all</button>
 </div>
 
 <script>
@@ -175,6 +183,28 @@
                 arrow.textContent = order === 1 ? '▲' : '▼';
             }
         });
+    }
+    let sixthRows = document.querySelectorAll('#history tr:nth-child(6), #comments tr:nth-child(6)');
+    let additionalRows = document.querySelectorAll('#history tr:nth-child(n+7), #comments tr:nth-child(n+7)');
+    let rowVisibilityButton = document.getElementById('rowVisibility');
+    function showFullTable(){
+        if (rowVisibilityButton.textContent === 'Show all') {
+            additionalRows.forEach(function (row) {
+                row.style.display = 'table-row';
+            })
+            sixthRows.forEach(function (row) {
+                row.classList.add('hide-pseudo');
+            })
+            rowVisibilityButton.textContent = 'Hide';
+        }else{
+            additionalRows.forEach(function (row) {
+                row.style.display = 'none';
+            })
+            sixthRows.forEach(function (row) {
+                row.classList.remove('hide-pseudo');
+            })
+            rowVisibilityButton.textContent = 'Show all';
+        }
     }
 </script>
 

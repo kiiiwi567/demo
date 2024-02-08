@@ -138,10 +138,15 @@
     }
 </script>
 <script  th:inline="javascript">
+    let tickets = /*[[${tickets}]]*/ [];
+    let currentUserEmail = /*[[${currentUserEmail}]]*/ null;
+    let currentUserRole = /*[[${currentUserRole}]]*/ null;
+
+    if (currentUserRole === 'Engineer'){
+        let createForm = document.getElementById('create_Ticket');
+        createForm.style.display = "none";
+    }
     function myTicketsFilter() {
-        let tickets = /*[[${tickets}]]*/ [];
-        let currentUserEmail = /*[[${currentUserEmail}]]*/ null;
-        let currentUserRole = /*[[${currentUserRole}]]*/ null;
         //console.log(tickets);
         let tbody = document.querySelector('#tickets tbody');
         let rows = tbody.querySelectorAll('tr');

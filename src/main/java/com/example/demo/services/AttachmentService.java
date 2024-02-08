@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 public class AttachmentService {
 
     private final AttachmentRepository attachmentRepository;
-    public Attachment getAttachmentByName(String name) {
-        return attachmentRepository.getAttachmentByName(name);
+    public Attachment getAttachmentByNameAndTicketId(String name, Integer ticketId) {
+        return attachmentRepository.getAttachmentByNameAndTicketId(name, ticketId);
     }
 }

@@ -17,6 +17,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 @Controller
 @RequiredArgsConstructor
@@ -34,9 +37,14 @@ public class TicketController {
         return "allTickets";
     }
     @GetMapping("/createTicket")
-    public String createTicket(Model model){
-        model.addAttribute("newTicket", new Ticket());
-        return "createTicket";
+    public String createTicket (Model model, HttpServletRequest request) throws IllegalAccessException{
+        if (!Objects.equals(jwtService.extractRole(jwtService.extractTokenFromRequest(request)), "Engineer")){
+            model.addAttribute("newTicket", new Ticket());
+            return "createTicket";
+        }
+        else {
+            throw new IllegalAccessException("Engineer tried to access ticket creation page");
+        }
     }
 
     @InitBinder("newTicket")
@@ -59,12 +67,29 @@ public class TicketController {
         return "ticketOverview";
     }
 
-    @GetMapping("/download/{fileName}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName) {
-        Attachment attachment = attachmentService.getAttachmentByName(fileName);
+    @GetMapping("/editTicket/{id}")
+    public String editTicket(@PathVariable Integer id, Model model){
+        Ticket ticket = ticketService.getTicketForOverviewById(id);
+        model.addAttribute("newTicket", ticket);
+        return "editTicket";
+    }
+
+    @PostMapping(value = "/editTicket/{id}")
+    public String saveEditedTicket(HttpServletRequest request,
+                               @Valid @ModelAttribute("newTicket") Ticket editedTicket,
+                               @RequestParam(name = "attachments",required = false) MultipartFile[] attachments,
+                               @RequestParam(name = "category") Integer categoryId) {
+        ticketService.editTicket(editedTicket, request, attachments, categoryId);
+        return "redirect:/allTickets";
+    }
+
+    @GetMapping("/download/{ticketId}/{fileName}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName,
+                                                 @PathVariable Integer ticketId) {
+        Attachment attachment = attachmentService.getAttachmentByNameAndTicketId(fileName, ticketId);
         ByteArrayResource resource = new ByteArrayResource(attachment.getContents());
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + URLEncoder.encode(fileName, StandardCharsets.UTF_8))
                 .body(resource);
     }
 }
