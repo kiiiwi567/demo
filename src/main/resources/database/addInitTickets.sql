@@ -9,3 +9,7 @@ insert into ticket (name, description, created_on, desired_resolution_date, assi
 ('forEngineer1','Description1','2023-01-01','2024-08-01',1,2,'Approved',3,'High',1),
 ('forEngineer1','Description1','2023-01-01','2024-09-01',5,3,'Done',3,'High',1),
 ('forManager1AfterF','Description1','2023-01-01','2024-10-01',5,3,'Approved',3,'High',1);
+
+SELECT t FROM Ticket t WHERE ((t.owner_id IN (2, 1)) AND (t.state = 'Approved'))
+            OR ((t.assignee_id = 5) AND (t.state in ('In_progress', 'Done')))
+            ORDER BY t.urgency, t.desired_resolution_date

@@ -2,14 +2,22 @@ package com.example.demo.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
-import java.time.LocalDate;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
+@NoArgsConstructor
 @Table(name = "history", schema =  "public")
 public class History {
+
+    public History(Integer ticketId, String action, User user, String description){
+        this.ticketId = ticketId;
+        this.action = action;
+        this.user = user;
+        this.description = description;
+    }
+
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -42,12 +42,94 @@
             <td th:text="${ticket.desiredResolutionDate}"></td>
             <td th:text="${ticket.urgency}"></td>
             <td th:text="${ticket.state}"></td>
-            <td><button class="actBut">action button</button></td>
+            <td class="actTd">
+                    <form class="actForm" method="post" th:action="@{'/transmitStatus/' + ${ticket.id}}">
+                        <select class="actList" name="selectedAction">
+                            <option value="" selected disabled hidden>Select action</option>
+                            <option value="Submit" th:if="${
+                                                            #strings.equals(ticket.state, 'Draft') or #strings.equals(ticket.state, 'Declined')
+                                                            and
+                                                                (
+                                                                    (#strings.equals(currentUserRole, 'Employee'))
+                                                                    or
+                                                                    ((#strings.equals(currentUserRole, 'Manager')) and (#strings.equals(currentUserEmail, ticket.owner.email)))
+                                                                )
+                                                            }">Submit</option>
+
+                            <option value="Approve" th:if="${
+                                                            #strings.equals(ticket.state, 'New')
+                                                            and #strings.equals(ticket.owner.role, 'Employee')
+                                                            and #strings.equals(currentUserRole, 'Manager')
+                                                            }">Approve</option>
+
+                            <option value="Decline" th:if="${
+                                                            #strings.equals(ticket.state, 'New')
+                                                            and #strings.equals(ticket.owner.role, 'Employee')
+                                                            and #strings.equals(currentUserRole, 'Manager')
+                                                            }">Decline</option>
+
+                            <option value="Cancel" th:if="${
+                                                            (
+                                                                (#strings.equals(currentUserRole, 'Employee'))
+                                                                and
+                                                                (#strings.equals(ticket.state, 'Draft') or #strings.equals(ticket.state, 'Declined'))
+                                                            )
+                                                            or
+                                                            (
+                                                                (#strings.equals(currentUserRole, 'Manager'))
+                                                                and
+                                                                (
+                                                                    (#strings.equals(currentUserEmail, ticket.owner.email))
+                                                                    and
+                                                                    (
+                                                                        #strings.equals(ticket.state, 'Draft')
+                                                                        or
+                                                                        #strings.equals(ticket.state, 'Declined')
+                                                                        or
+                                                                        (#strings.equals(ticket.state, 'New') and #strings.equals(ticket.owner.role, 'Employee'))
+                                                                    )
+                                                                )
+                                                            )
+                                                            or
+                                                            (
+                                                                (#strings.equals(currentUserRole, 'Engineer'))
+                                                                and
+                                                                (#strings.equals(ticket.state, 'Approved'))
+                                                            )
+                                                            }">Cancel</option>
+
+                            <option value="Assign to me" th:if="${#strings.equals(currentUserRole, 'Engineer') and #strings.equals(ticket.state, 'Approved')}">Assign to me</option>
+
+                            <option value="Done" th:if="${#strings.equals(currentUserRole, 'Engineer') and #strings.equals(ticket.state, 'In_progress')}">Done</option>
+                        </select>
+                        <button class="actSubmit" type="submit">&#129154;</button>
+                    </form>
+                    <span style="display: none">No action available</span>
+            </td>
         </tr>
         </tbody>
     </table>
 </div>
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let actTDs = document.querySelectorAll(".actTd");
+        console.log("//////////FIXING ACTIONS///////////");
+        console.log(actTDs);
+        actTDs.forEach(function (actTD){
+            console.log(actTD);
+            let options = actTD.querySelector("form").querySelector("select").querySelectorAll("option");
+            console.log(options);
+            if (options.length < 2){
+                actTD.querySelector("form").style.display = "none";
+                actTD.querySelector("span").style.display = "block";
+                console.log("result: no action for this one")
+            }
+            else {
+                console.log("result: actions preserved")
+            }
+        })
+    });
+
     let tickets = document.getElementById('tickets');
 
     tickets.onclick = function(e) {

@@ -106,4 +106,12 @@ public class TicketController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + URLEncoder.encode(fileName, StandardCharsets.UTF_8))
                 .body(resource);
     }
+
+    @PostMapping("/transmitStatus/{ticketId}")
+    public String transmitStatus(@PathVariable Integer ticketId,
+                                @RequestParam String selectedAction,
+                                 HttpServletRequest request){
+        ticketService.transmitStatus(ticketId, selectedAction, request);
+        return "redirect:/allTickets";
+    }
 }

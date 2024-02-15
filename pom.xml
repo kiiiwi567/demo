@@ -119,6 +119,16 @@
 			<artifactId>hypersistence-utils-hibernate-62</artifactId>
 			<version>3.7.1</version>
 		</dependency>
+		<dependency>
+			<groupId>org.thymeleaf</groupId>
+			<artifactId>thymeleaf</artifactId>
+			<version>3.1.2.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.thymeleaf</groupId>
+			<artifactId>thymeleaf-spring6</artifactId>
+			<version>3.1.2.RELEASE</version>
+		</dependency>
 
 	</dependencies>
 

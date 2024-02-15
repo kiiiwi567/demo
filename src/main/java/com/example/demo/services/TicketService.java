@@ -2,6 +2,7 @@ package com.example.demo.services;
 
 import com.example.demo.config.JwtService;
 import com.example.demo.models.*;
+import com.example.demo.models.enums.TicketState;
 import com.example.demo.repositories.CategoryRepository;
 import com.example.demo.repositories.TicketRepository;
 import com.example.demo.repositories.UserRepository;
@@ -43,9 +44,7 @@ public class TicketService {
                              MultipartFile[] attachmentFiles,
                              String commentText,
                              Integer categoryId) {
-        String ownerEmail = jwtService.extractUsername(jwtService.extractTokenFromRequest(request));
-        User ticketCreator = userRepository.findByEmail(ownerEmail).orElseThrow(() ->
-                new NoSuchElementException("Ticket is trying to be created by a user, who isn't in a DB: " + ownerEmail));
+        User ticketCreator = getUserFromRequest(request);
         newTicket.setCategory(categoryRepository.getCategoryById(categoryId));
         newTicket.setOwner(ticketCreator);
         entityManager.persist(newTicket);
@@ -54,12 +53,24 @@ public class TicketService {
             List<Attachment> attachments = addAttachmentsToList(attachmentFiles, newTicket.getId());
             for (Attachment attachment : attachments){
                 entityManager.persist(attachment);
+                History attRecord = new History(newTicket.getId(),
+                        "File is attached",
+                        ticketCreator,
+                        "File is attached: " + attachment.getName());
+                entityManager.persist(attRecord);
             }
         }
 
         if (commentText!=null && !commentText.isEmpty() ){
-            addComment(commentText, newTicket.getId(), ticketCreator);
+            Comment comment = new Comment(ticketCreator, commentText, newTicket.getId());
+            entityManager.persist(comment);
         }
+
+        History crRecord = new History(newTicket.getId(),
+                "Ticket is created",
+                ticketCreator,
+                "Ticket is created");
+        entityManager.persist(crRecord);
     }
 
     @Transactional
@@ -68,9 +79,6 @@ public class TicketService {
                              MultipartFile[] attachmentFiles,
                              Integer categoryId) {
         Ticket oldTicket = ticketRepository.getTicketForOverviewById(newTicket.getId());
-        String currentUserEmail = jwtService.extractUsername(jwtService.extractTokenFromRequest(request));
-        userRepository.findByEmail(currentUserEmail).orElseThrow(() ->
-                new NoSuchElementException("Ticket is trying to be edited by a user, who isn't in a DB: " + currentUserEmail));
         newTicket.setCategory(categoryRepository.getCategoryById(categoryId));
         newTicket.setCreatedOn(oldTicket.getCreatedOn());
         newTicket.setState(oldTicket.getState());
@@ -80,11 +88,19 @@ public class TicketService {
         newTicket.setHistoryRecords(oldTicket.getHistoryRecords());
         newTicket.setComments(oldTicket.getComments());
 
+        User editingUser = getUserFromRequest(request);
+
         List<Attachment> ticketAttachmentList = addAttachmentsToList(attachmentFiles, newTicket.getId());
-        removeNoLongerValidAttachments(ticketAttachmentList, oldTicket.getAttachments());
-        ticketAttachmentList = replaceEmptyAttachments(ticketAttachmentList, oldTicket.getAttachments());
+        removeNoLongerValidAttachments(ticketAttachmentList, oldTicket.getAttachments(), editingUser);
+        ticketAttachmentList = replaceEmptyAttachments(ticketAttachmentList, oldTicket.getAttachments(), editingUser);
 
         newTicket.setAttachments(ticketAttachmentList);
+
+        History record = new History(newTicket.getId(),
+                                    "Ticket edited",
+                                    getUserFromRequest(request),
+                                    "Ticket edited");
+        entityManager.merge(record);
         entityManager.merge(newTicket);
     }
 
@@ -108,15 +124,21 @@ public class TicketService {
         return attachment;
     }
 
-    public void removeNoLongerValidAttachments(List<Attachment> validAttachments, List<Attachment> currentAttachments ){
+    public void removeNoLongerValidAttachments(List<Attachment> validAttachments, List<Attachment> currentAttachments, User currentUser){
         for (Attachment attachmentToCheck : currentAttachments) {
             if(validAttachments.stream().noneMatch(attachment -> attachment.getName().equals(attachmentToCheck.getName()))){
                 entityManager.remove(attachmentToCheck);
+
+                History attRecord = new History(attachmentToCheck.getTicketId(),
+                        "File removed",
+                        currentUser,
+                        "File removed: " + attachmentToCheck.getName());
+                entityManager.persist(attRecord);
             }
         }
     }
 
-    public List<Attachment> replaceEmptyAttachments(List<Attachment> attachmentsToFix, List<Attachment> oldAttachments) {
+    public List<Attachment> replaceEmptyAttachments(List<Attachment> attachmentsToFix, List<Attachment> oldAttachments, User currentUser) {
         List<Attachment> correctList = new ArrayList<>();
         for (Attachment attachment : attachmentsToFix) {
             if (attachment.getContents().length == 0) {
@@ -129,27 +151,60 @@ public class TicketService {
             }
             else{
                 correctList.add(attachment);
+                History attRecord = new History(attachment.getTicketId(),
+                        "File added",
+                        currentUser,
+                        "File added: " + attachment.getName());
+                entityManager.persist(attRecord);
             }
         }
         return correctList;
     }
     @Transactional
     public void leaveComment(HttpServletRequest request, String commentText, Integer ticketId) {
-        String currentUserEmail = jwtService.extractUsername(jwtService.extractTokenFromRequest(request));
-        User currentUser = userRepository.findByEmail(currentUserEmail).orElseThrow(() ->
-                new NoSuchElementException("Ticket is trying to be edited by a user, who isn't in a DB: " + currentUserEmail));
-        addComment(commentText, ticketId, currentUser);
-    }
-
-    public void addComment(String commentText, Integer ticketId, User currentUser){
-        Comment comment = new Comment();
-        comment.setText(commentText);
-        comment.setTicketId(ticketId);
-        comment.setUser(currentUser);
+        User currentUser = getUserFromRequest(request);
+        Comment comment = new Comment(currentUser, commentText, ticketId);
         entityManager.merge(comment);
     }
 
     public Ticket getTicketForOverviewById(Integer ticketId) {
         return ticketRepository.getTicketForOverviewById(ticketId);
+    }
+
+    public User getUserFromRequest (HttpServletRequest request){
+        String currentUserEmail = jwtService.extractUsername(jwtService.extractTokenFromRequest(request));
+        return userRepository.findByEmail(currentUserEmail).orElseThrow(()->new NoSuchElementException("Couldn't find user in a DB!"));
+    }
+    @Transactional
+    public void transmitStatus(Integer ticketId, String selectedAction, HttpServletRequest request) {
+        Ticket ticket = getTicketForOverviewById(ticketId);
+        String previousStatus = String.valueOf(ticket.getState());
+        User user = getUserFromRequest(request);
+        switch (selectedAction) {
+            case "Submit" -> ticket.setState(TicketState.New);
+            case "Approve" -> {
+                ticket.setState(TicketState.Approved);
+                ticket.setApprover(user);
+            }
+            case "Decline" -> {
+                ticket.setState(TicketState.Declined);
+                ticket.setApprover(user);
+            }
+            case "Cancel" -> {
+                ticket.setState(TicketState.Cancelled);
+                ticket.setApprover(user);
+            }
+            case "Assign to me" -> {
+                ticket.setState(TicketState.In_progress);
+                ticket.setAssignee(user);
+            }
+            case "Done" -> ticket.setState(TicketState.Done);
+        }
+        History record = new History(ticketId,
+                                    "Ticket status changed",
+                                    user,
+                                    "Ticket status changed from '" + previousStatus + "' to '" + ticket.getState().toString() + "'");
+        entityManager.merge(ticket);
+        entityManager.merge(record);
     }
 }
