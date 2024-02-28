@@ -69,5 +69,3 @@ create table if not exists feedback
     "text" varchar(500),
     ticket_id int references ticket (id)
 );
-
-alter table attachment alter column "name" type varchar(100);

@@ -68,12 +68,78 @@ a{
 .button-container-vert textarea{
     margin: 5px;
     max-width: calc(100% - 10px);
-    height: 50%;
+    height: 70%;
 }
 
 #commentDiv{
     margin-top: 30px;
-    height: 60%;
+    height: 30%;
+}
+
+#feedbackDiv{
+    margin-top: 30px;
+    height: 40%;
+}
+
+#feedbackDiv textarea{
+    height: 50%;
+}
+
+.rating{
+    position: relative;
+    font-size: 65px;
+    display: inline-block;
+    color: #3498db;
+    -webkit-text-stroke: 2px #aaa9a9;
+}
+
+.rating::before{
+    content:"★★★★★";
+    display: block;
+}
+
+.ratingItems{
+    position: absolute;
+    width:100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display:flex;
+    flex-direction: row-reverse;
+}
+
+.star{
+    position: absolute;
+    width:0;
+    height: 0;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.star:checked,
+.star:checked~ .starLabel{
+    color:#FFE500 ;
+}
+
+.starLabel{
+    flex: 0 0 20%;
+    height: 100%;
+    cursor: pointer;
+    color: white;
+}
+
+.starLabel::before{
+    content:"★";
+    display: block;
+    transition: color 0.1s ease 0s;
+}
+
+.starLabel:hover,
+.starLabel:hover~ .starLabel,
+.starLabel:checked~  .starLabel.hover{
+    color: #FBFF82;
 }
 
 button {
@@ -355,8 +421,6 @@ select, .inputCr, textarea{
     display: flex;
     justify-content: space-between;
 }
-
-
 
 
 

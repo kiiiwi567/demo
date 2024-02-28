@@ -3,12 +3,22 @@ package com.example.demo.models;
 import jakarta.persistence.*;
 import jakarta.persistence.Id;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Data
 @Entity
+@NoArgsConstructor
 @Table(name = "feedback", schema =  "public")
 public class Feedback {
+
+    public Feedback(Integer userId, Integer rate, String text, Integer ticketId){
+        this.userId = userId;
+        this.rate = rate;
+        this.text = text;
+        this.ticketId = ticketId;
+    }
     @Id
     @Column(name ="id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,8 +30,8 @@ public class Feedback {
     @Column(name = "rate")
     private Integer rate;
 
-    @Column(name = "date")
-    private LocalDate date;
+    @Column(name = "timestamp")
+    private LocalDateTime timestamp = LocalDateTime.now();
 
     @Column(name = "text")
     private String text;

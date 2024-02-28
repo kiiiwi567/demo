@@ -64,8 +64,9 @@ public class TicketController {
     }
 
     @GetMapping("/ticketOverview/{id}")
-    public String ticketOverview(@PathVariable Integer id, Model model){
+    public String ticketOverview(@PathVariable Integer id, Model model, HttpServletRequest request){
         model.addAttribute("ticket", ticketService.getTicketForOverviewById(id));
+        model.addAttribute("currentUserEmail", jwtService.extractUsername(jwtService.extractTokenFromRequest(request)));
         return "ticketOverview";
     }
 
@@ -112,6 +113,15 @@ public class TicketController {
                                 @RequestParam String selectedAction,
                                  HttpServletRequest request){
         ticketService.transmitStatus(ticketId, selectedAction, request);
+        return "redirect:/allTickets";
+    }
+
+    @PostMapping("/leaveFeedback/{ticketId}")
+    public String leaveFeedback(@PathVariable Integer ticketId,
+                                @RequestParam Integer star_rating,
+                                @RequestParam String commentText,
+                                HttpServletRequest request){
+        ticketService.leaveFeedback(ticketId, star_rating, commentText, request);
         return "redirect:/allTickets";
     }
 }

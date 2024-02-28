@@ -10,7 +10,6 @@ import lombok.Data;
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -76,4 +75,9 @@ public class Ticket {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "ticket_id")
     private List<History> historyRecords;
+
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "ticket_id")
+    private List<Feedback> feedback;
 }

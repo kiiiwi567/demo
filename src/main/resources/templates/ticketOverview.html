@@ -45,8 +45,32 @@
             </form>
             <button class="button-green" id="leaveCommentButton">Write a comment</button>
             <form id="commentDiv" method="post" th:action="@{'/leaveComment/' + ${ticket.id}}">
-                <textarea id="commentTextArea" name="commentText" minlength="1" maxlength="500" required placeholder="Write your comment here..."></textarea>
+                <textarea class="commTextArea" id="commentTextArea" name="commentText" minlength="1" maxlength="500" required placeholder="Write your comment here..."></textarea>
                 <button class="button-orange" id="addCommentButton" type="submit">Add comment to ticket</button>
+            </form>
+            <form id="feedbackDiv" method="post" th:action="@{'/leaveFeedback/' + ${ticket.id}}" th:if="${(#strings.equals(currentUserEmail, ticket.owner.email)) and (#strings.equals(ticket.state, 'Done'))}">
+
+                <div class="rating" id="rating">
+                    <div class="ratingItems">
+                        <input id="star5" type="radio" value="5" class="star" name="star_rating">
+                        <label for="star5" class="starLabel"></label>
+
+                        <input id="star4" type="radio" value="4" class="star" name="star_rating">
+                        <label for="star4" class="starLabel"></label>
+
+                        <input id="star3" type="radio" value="3" class="star" name="star_rating">
+                        <label for="star3" class="starLabel"></label>
+
+                        <input id="star2" type="radio" value="2" class="star" name="star_rating">
+                        <label for="star2" class="starLabel"></label>
+
+                        <input id="star1" type="radio" value="1" class="star" name="star_rating">
+                        <label for="star1" class="starLabel"></label>
+                    </div>
+                </div>
+
+                <textarea class="commTextArea" id="feedbackTextArea" name="commentText" minlength="1" maxlength="500" placeholder="Write your comment in addition to feedback here..."></textarea>
+                <button class="button-orange" id="addFeedbackButton" type="submit">Submit feedback</button>
             </form>
         </div>
     </div>
@@ -69,7 +93,7 @@
             <td th:text="${historyRow.timestamp}"></td>
             <td th:text="${historyRow.user.firstName}"></td>
             <td th:text="${historyRow.action}"></td>
-            <td th:text="${historyRow.description}"></td>
+            <td th:text="${historyRow.description}" style="white-space: pre-line;"></td>
         </tr>
         </tbody>
     </table>
