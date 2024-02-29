@@ -6,7 +6,6 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -20,9 +19,13 @@ import java.util.function.Function;
 public class JwtService {
 
     private static final String SECRET_KEY = "6466b560cadfaaaad8787c6a16e3f8e62b125b36daee9fc7fb6c044e4f97e183";
-
+    public String extractPayloadField(String token, String fieldName, String secondSplitter){
+        String[] tokenParts = token.split("\\.");
+        String payload = new String(Decoders.BASE64.decode(tokenParts[1]));
+        return payload.split(fieldName)[1].split(secondSplitter)[0].replaceAll("\"", "");
+    }
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+        return extractPayloadField(token, "\"sub\":", ",");
     }
 
     public String extractRole(String token) {
@@ -51,9 +54,13 @@ public class JwtService {
                 .compact();
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails){
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    public boolean isTokenValid(String token){
+        try {
+            extractAllClaims(token);
+            return !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private boolean isTokenExpired(String token){
@@ -61,7 +68,9 @@ public class JwtService {
     }
 
     private Date extractExpiration(String token){
-        return extractClaim(token, Claims::getExpiration);
+        String expDateStr = extractPayloadField(token, "\"exp\":", "}");
+        long expDateLong = Long.parseLong(expDateStr);
+        return new Date(expDateLong * 1000);
     }
 
     private Claims extractAllClaims(String token) {

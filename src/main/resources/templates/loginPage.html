@@ -7,17 +7,31 @@
 </head>
 <body>
 <div class="container">
-    <h1>Login page</h1>
-   <form action="/api/v1/auth/authenticate" method="post"> <!-- onsubmit="validateForm(); return false;"-->
-        <p>Email:<p>
-        <input class="form-control" type="email" name="userEmail" id="email" required>
-        <p>Password:<p>
-        <input class="form-control" type="password" name="password" id="password" required>
-        <button type="button" id="password-toggle" onclick="togglePassword()">Show</button>
-        <br>
-        <br>
-        <button class="button-blue" type="submit">Submit</button>
-    </form>
+    <div class="grid">
+        <div class="toprow-overview">
+            <h1>Login page</h1>
+        </div>
+        <div class="leftcol login-form">
+           <form action="/api/v1/auth/authenticate" method="post"> <!-- onsubmit="validateForm(); return false;"-->
+                <p>Email:</p>
+                <input class="form-control" type="email" name="userEmail" id="email" required>
+               <p class="wrongCred" th:if="${showEmailWarning}">Wrong email. Please, try again</p>
+                <p>Password:</p>
+               <div>
+                   <input class="form-control" type="password" name="password" id="password" required>
+                   <button type="button" id="password-toggle" onclick="togglePassword()">Show</button>
+               </div>
+               <p class="wrongCred" th:if="${showPasswordWarning}">Wrong password. Please, try again</p>
+
+                <br>
+                <br>
+                <button class="button-blue" type="submit">Submit</button>
+            </form>
+        </div>
+        <div th:if="${showWarning}" class="midcol midcol-login">
+            <span>You haven't been logging in for more than 24 hours. Please, re-login</span>
+        </div>
+    </div>
 </div>
 
 <script>

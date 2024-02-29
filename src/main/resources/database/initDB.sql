@@ -37,14 +37,14 @@ create table if not exists attachment
 (
     id serial primary key,
     contents bytea,
-    ticket_id int references ticket (id),
+    ticket_id int references ticket (id) ON DELETE CASCADE,
     "name" varchar(50)
 );
 
 create table if not exists history
 (
     id serial primary key,
-    ticket_id int references ticket(id),
+    ticket_id int references ticket(id) ON DELETE CASCADE,
     "timestamp" timestamp without time zone,
     "action" varchar(50),
     user_id int references "user" (id),
@@ -57,7 +57,7 @@ create table if not exists "comment"
     user_id int references "user" (id),
     "text" varchar(500),
     "timestamp" timestamp without time zone,
-    ticket_id int references ticket (id)
+    ticket_id int references ticket (id) ON DELETE CASCADE
 );
 
 create table if not exists feedback
@@ -67,5 +67,5 @@ create table if not exists feedback
     rate int,
     "date" date,
     "text" varchar(500),
-    ticket_id int references ticket (id)
+    ticket_id int references ticket (id) ON DELETE CASCADE
 );

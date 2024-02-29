@@ -94,6 +94,7 @@ public class TicketService {
         newTicket.setOwner(oldTicket.getOwner());
         newTicket.setHistoryRecords(oldTicket.getHistoryRecords());
         newTicket.setComments(oldTicket.getComments());
+        newTicket.setFeedback(oldTicket.getFeedback());
 
         User editingUser = getUserFromRequest(request);
 
