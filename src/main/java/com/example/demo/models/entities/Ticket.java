@@ -1,4 +1,4 @@
-package com.example.demo.models;
+package com.example.demo.models.entities;
 
 import com.example.demo.models.enums.TicketState;
 import com.example.demo.models.enums.TicketUrgency;
@@ -48,7 +48,8 @@ public class Ticket {
     @Type(PostgreSQLEnumType.class)
     private TicketState state = TicketState.New;
 
-    @ManyToOne
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 

@@ -1,4 +1,4 @@
-package com.example.demo.models;
+package com.example.demo.models.entities;
 
 import com.example.demo.models.enums.UserRole;
 import jakarta.persistence.*;

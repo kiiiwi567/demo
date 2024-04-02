@@ -11,7 +11,7 @@
         <div class="grid-overview">
             <div class="toprow-overview"><h1 th:text="'Ticket ' + ${ticket.id} + ': ' + ${ticket.name}"></h1></div>
             <div class="leftcol"><h4>Category</h4></div>
-            <div class="midcol-overview" th:text="${ticket.category.name}"></div>
+            <div class="midcol-overview" th:text="${ticket.category}"></div>
             <div class="leftcol"><h4>Status</h4></div>
             <div class="midcol-overview" th:text="${ticket.state}"></div>
             <div class="leftcol"><h4>Created on</h4></div>
@@ -23,13 +23,14 @@
             <div class="leftcol"><h4>Description</h4></div>
             <div class="midcol-overview" th:text="${ticket.description != null ? ticket.description : '-'}"></div>
             <div class="leftcol"><h4>Owner</h4></div>
-            <div class="midcol-overview" th:text="${ticket.owner.firstName}"></div>
+            <div class="midcol-overview" th:text="${ticket.ownerUsername}"></div>
             <div class="leftcol"><h4>Assignee</h4></div>
-            <div class="midcol-overview" th:text="${ticket.assignee != null ? ticket.assignee.firstName : 'None'}"></div>
+            <div class="midcol-overview" th:text="${ticket.assigneeUsername != null ? ticket.assigneeUsername : 'None'}"></div>
             <div class="leftcol"><h4>Approver</h4></div>
-            <div class="midcol-overview" th:text="${ticket.approver != null ? ticket.approver.firstName : 'None'}"></div>
+            <div class="midcol-overview" th:text="${ticket.approverUsername != null ? ticket.approverUsername : 'None'}"></div>
             <div class="leftcol"><h4>Attachments</h4></div>
             <div class="midcol-overview">
+                <p th:if="${ticket.attachments == null}">None</p>
                 <a class="attachments-for-dwnld" th:href="@{'/download/' + ${ticket.id} + '/' + ${attachment.name}}" th:each="attachment : ${ticket.attachments}">
                     <div style="max-width: 90%; word-wrap: break-word;" th:text="${attachment.name}"> </div>
                     <div style="display: flex; align-items: center">&#129147;</div>
@@ -48,7 +49,7 @@
                 <textarea class="commTextArea" id="commentTextArea" name="commentText" minlength="1" maxlength="500" required placeholder="Write your comment here..."></textarea>
                 <button class="button-orange" id="addCommentButton" type="submit">Add comment to ticket</button>
             </form>
-            <form id="feedbackDiv" method="post" th:action="@{'/leaveFeedback/' + ${ticket.id}}" th:if="${(#strings.equals(currentUserEmail, ticket.owner.email)) and (#strings.equals(ticket.state, 'Done'))}">
+            <form id="feedbackDiv" method="post" th:action="@{'/leaveFeedback/' + ${ticket.id}}" th:if="${(#strings.equals(currentUserEmail, ticket.ownerEmail)) and (#strings.equals(ticket.state, 'Done'))}">
 
                 <div class="rating" id="rating">
                     <div class="ratingItems">
@@ -91,7 +92,7 @@
         <tbody>
         <tr th:each="historyRow : ${ticket.historyRecords}">
             <td th:text="${historyRow.timestamp}"></td>
-            <td th:text="${historyRow.user.firstName}"></td>
+            <td th:text="${historyRow.username}"></td>
             <td th:text="${historyRow.action}"></td>
             <td th:text="${historyRow.description}" style="white-space: pre-line;"></td>
         </tr>
@@ -108,7 +109,7 @@
         <tbody>
         <tr th:each="comment : ${ticket.comments}">
             <td th:text="${comment.timestamp}"></td>
-            <td th:text="${comment.user.firstName}"></td>
+            <td th:text="${comment.username}"></td>
             <td th:text="${comment.text}"></td>
         </tr>
         </tbody>

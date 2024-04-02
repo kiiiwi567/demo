@@ -1,7 +1,6 @@
-package com.example.demo.models;
+package com.example.demo.models.entities;
 
 import jakarta.persistence.*;
-import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,31 +9,28 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @NoArgsConstructor
-@Table(name = "feedback", schema =  "public")
-public class Feedback {
-
-    public Feedback(Integer userId, Integer rate, String text, Integer ticketId){
-        this.userId = userId;
-        this.rate = rate;
+@Table(name = "comment", schema =  "public")
+public class Comment {
+    public Comment(User user, String text, Integer ticketId){
+        this.user = user;
         this.text = text;
         this.ticketId = ticketId;
     }
+
     @Id
-    @Column(name ="id")
+    @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "user_id")
-    private Integer userId;
-
-    @Column(name = "rate")
-    private Integer rate;
-
-    @Column(name = "timestamp")
-    private LocalDateTime timestamp = LocalDateTime.now();
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(name = "text")
     private String text;
+
+    @Column(name = "timestamp")
+    private LocalDateTime timestamp = LocalDateTime.now();
 
     @Column(name = "ticket_id")
     private Integer ticketId;
