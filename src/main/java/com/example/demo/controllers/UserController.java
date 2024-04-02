@@ -9,14 +9,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequiredArgsConstructor
 public class UserController {
 
-    @GetMapping("/login")
-    public String login(Model model,
-                        @RequestParam(name = "showWarning", required = false, defaultValue = "false") boolean showWarning,
-                        @RequestParam(name = "showEmailWarning", required = false, defaultValue = "false") boolean showEmailWarning,
-                        @RequestParam(name = "showPasswordWarning", required = false, defaultValue = "false") boolean showPasswordWarning) {
-        model.addAttribute("showWarning", showWarning);
-        model.addAttribute("showEmailWarning", showEmailWarning);
-        model.addAttribute("showPasswordWarning", showPasswordWarning);
-        return "loginPage";
-    }
+//    @GetMapping("/login")
+//    public String login(Model model,
+//                        @RequestParam(name = "showWarning", required = false, defaultValue = "false") boolean showWarning,
+//                        @RequestParam(name = "showEmailWarning", required = false, defaultValue = "false") boolean showEmailWarning,
+//                        @RequestParam(name = "showPasswordWarning", required = false, defaultValue = "false") boolean showPasswordWarning) {
+//        model.addAttribute("showWarning", showWarning);
+//        model.addAttribute("showEmailWarning", showEmailWarning);
+//        model.addAttribute("showPasswordWarning", showPasswordWarning);
+//        return "loginPage";
+//    }
 }

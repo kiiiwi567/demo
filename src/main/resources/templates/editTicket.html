@@ -16,12 +16,12 @@
 
                     <div class="leftcol"><h4>Category</h4></div>
                     <div>
-                        <select id="category" name="category" th:field="*{category}" class="midcol" required>
-                            <option value="1" th:selected="${newTicket.category.id == 1}">Application & Services</option>
-                            <option value="2" th:selected="${newTicket.category.id == 2}">Benefits & Paperwork</option>
-                            <option value="3" th:selected="${newTicket.category.id == 3}">Hardware & Software</option>
-                            <option value="4" th:selected="${newTicket.category.id == 4}">People Management</option>
-                            <option value="5" th:selected="${newTicket.category.id == 5}">Workplaces & Facilities</option>
+                        <select id="category" name="category" th:field="*{categoryId}" class="midcol" required>
+                            <option value="1" th:selected="${newTicket.categoryId == 1}">Application & Services</option>
+                            <option value="2" th:selected="${newTicket.categoryId == 2}">Benefits & Paperwork</option>
+                            <option value="3" th:selected="${newTicket.categoryId == 3}">Hardware & Software</option>
+                            <option value="4" th:selected="${newTicket.categoryId == 4}">People Management</option>
+                            <option value="5" th:selected="${newTicket.categoryId == 5}">Workplaces & Facilities</option>
                         </select>
                     </div>
 

@@ -1,6 +1,6 @@
 package com.example.demo.services;
 
-import com.example.demo.models.Attachment;
+import com.example.demo.models.entities.Attachment;
 import com.example.demo.repositories.AttachmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

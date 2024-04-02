@@ -1,7 +1,8 @@
 package com.example.demo.services;
 
 import com.example.demo.config.JwtService;
-import com.example.demo.models.*;
+import com.example.demo.models.dtos.*;
+import com.example.demo.models.entities.*;
 import com.example.demo.models.enums.TicketState;
 import com.example.demo.repositories.CategoryRepository;
 import com.example.demo.repositories.FeedbackRepository;
@@ -28,19 +29,54 @@ public class TicketService {
     private final CategoryRepository categoryRepository;
     private final FeedbackRepository feedbackRepository;
     private final MailSenderService mailSenderService;
+    private final TicketDTOMapper ticketDTOMapper;
+    private final TicketFullDTOMapper ticketFullDTOMapper;
+    private final TicketEditDTOMapper ticketEditDTOMapper;
     @PersistenceContext
     private EntityManager entityManager;
-    public List<Ticket> getAllowedTickets(HttpServletRequest request){
+
+    public Map<String, Object> getAllTickets(HttpServletRequest request){
+        Map<String, Object> response = new HashMap<>();
+        response.put("tickets", getAllowedTickets(request));
+        response.put("currentUserEmail", jwtService.extractUsername(jwtService.extractTokenFromRequest(request)));
+        response.put("currentUserRole", jwtService.extractRole(jwtService.extractTokenFromRequest(request)));
+        return response;
+    }
+
+    public List<TicketDTO> getAllowedTickets(HttpServletRequest request){
         String jwt = jwtService.extractTokenFromRequest(request);
         String role = jwtService.extractRole(jwt);
         String email = jwtService.extractUsername(jwt);
-        return switch (role) {
-            case "Employee" -> ticketRepository.getAllTicketsForEmployee(email);
-            case "Manager" -> ticketRepository.getAllTicketsForManager(email);
-            case "Engineer" -> ticketRepository.getAllTicketsForEngineer(email);
-            default -> ticketRepository.getAllTickets();
-        };
+        List<Ticket> tickets;
+        switch (role) {
+            case "Employee" -> tickets = ticketRepository.getAllTicketsForEmployee(email);
+            case "Manager" -> tickets = ticketRepository.getAllTicketsForManager(email);
+            case "Engineer" -> tickets = ticketRepository.getAllTicketsForEngineer(email);
+            default -> throw new IllegalStateException("Unexpected value: " + role);
+        }
+        return tickets.stream()
+                .map(ticketDTOMapper)
+                .toList();
     }
+
+    public Ticket getTicketById(Integer ticketId) {
+        return ticketRepository.getTicketForOverviewById(ticketId);
+    }
+    public Map<String, Object> getTicket(Integer ticketId, HttpServletRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("ticket", getTicketFullDTO(ticketId));
+        response.put("currentUserEmail", jwtService.extractUsername(jwtService.extractTokenFromRequest(request)));
+        return response;
+    }
+    public TicketFullDTO getTicketFullDTO(Integer ticketId) {
+        return ticketFullDTOMapper.apply(getTicketById(ticketId));
+    }
+
+    public TicketEditDTO getTicketEditDTO(Integer id) {
+        Ticket ticket = getTicketById(id);
+        return ticketEditDTOMapper.apply(ticket);
+    }
+
     @Transactional
     public void createTicket(Ticket newTicket,
                              HttpServletRequest request,
@@ -52,7 +88,7 @@ public class TicketService {
         newTicket.setOwner(ticketCreator);
         entityManager.persist(newTicket);
 
-        if (attachmentFiles != null){
+        if (attachmentFiles[0].getSize() != 0){
             List<Attachment> attachments = addAttachmentsToList(attachmentFiles, newTicket.getId());
             for (Attachment attachment : attachments){
                 entityManager.persist(attachment);
@@ -175,17 +211,13 @@ public class TicketService {
         entityManager.merge(comment);
     }
 
-    public Ticket getTicketForOverviewById(Integer ticketId) {
-        return ticketRepository.getTicketForOverviewById(ticketId);
-    }
-
     public User getUserFromRequest (HttpServletRequest request){
         String currentUserEmail = jwtService.extractUsername(jwtService.extractTokenFromRequest(request));
         return userRepository.findByEmail(currentUserEmail).orElseThrow(()->new NoSuchElementException("Couldn't find user in a DB!"));
     }
     @Transactional
     public void transmitStatus(Integer ticketId, String selectedAction, HttpServletRequest request) {
-        Ticket ticket = getTicketForOverviewById(ticketId);
+        Ticket ticket = getTicketById(ticketId);
         String previousStatus = String.valueOf(ticket.getState());
         User user = getUserFromRequest(request);
 
@@ -267,7 +299,7 @@ public class TicketService {
                 "Ticket completion rated",
                 currentUser,
                 "Ticket completion was rated " + "★".repeat(rate) + Objects.toString(commentAddition, ""));
-        User assignee = getTicketForOverviewById(ticketId).getAssignee();
+        User assignee = getTicketById(ticketId).getAssignee();
         mailSenderService.sendNewMail(new String[]{assignee.getEmail()},
                 "Feedback was provided",
                 "Dear " + assignee.getFirstName() + " " + assignee.getLastName() + "<br><br>" + "The feedback was provided on ticket " + "<a href=\"http://localhost:8080/ticketOverview/" + ticketId + "\">" + ticketId + "</a>"
@@ -275,4 +307,5 @@ public class TicketService {
 
         entityManager.merge(record);
     }
+
 }

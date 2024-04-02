@@ -1,0 +1,46 @@
+server:
+  port: 8181
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:1234/tickettooldb
+    username: postgres
+    password: 123
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+    drop-first: false
+    default-schema: public
+  jpa:
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath*:database/initDB.sql
+      data-locations: classpath*:database/populateDB.sql
+  servlet:
+    multipart:
+      max-file-size: 5MB
+  mail:
+    username: antoha052003@gmail.com
+    host: smtp.gmail.com
+    port: 587
+    password: zqnz gwru ozhk lxyr
+    properties:
+      mail:
+        smtp:
+          starttls:
+            required: true
+            enable: true
+          auth: true
+          transport.protocol: smtp
+  docker:
+    compose:
+      file: ./docker-compose.yml

@@ -52,19 +52,19 @@
                                                                 (
                                                                     (#strings.equals(currentUserRole, 'Employee'))
                                                                     or
-                                                                    ((#strings.equals(currentUserRole, 'Manager')) and (#strings.equals(currentUserEmail, ticket.owner.email)))
+                                                                    ((#strings.equals(currentUserRole, 'Manager')) and (#strings.equals(currentUserEmail, ticket.ownerEmail)))
                                                                 )
                                                             }">Submit</option>
 
                             <option value="Approve" th:if="${
                                                             #strings.equals(ticket.state, 'New')
-                                                            and #strings.equals(ticket.owner.role, 'Employee')
+                                                            and #strings.equals(ticket.ownerRole, 'Employee')
                                                             and #strings.equals(currentUserRole, 'Manager')
                                                             }">Approve</option>
 
                             <option value="Decline" th:if="${
                                                             #strings.equals(ticket.state, 'New')
-                                                            and #strings.equals(ticket.owner.role, 'Employee')
+                                                            and #strings.equals(ticket.ownerRole, 'Employee')
                                                             and #strings.equals(currentUserRole, 'Manager')
                                                             }">Decline</option>
 
@@ -79,14 +79,14 @@
                                                                 (#strings.equals(currentUserRole, 'Manager'))
                                                                 and
                                                                 (
-                                                                    (#strings.equals(currentUserEmail, ticket.owner.email))
+                                                                    (#strings.equals(currentUserEmail, ticket.ownerEmail))
                                                                     and
                                                                     (
                                                                         #strings.equals(ticket.state, 'Draft')
                                                                         or
                                                                         #strings.equals(ticket.state, 'Declined')
                                                                         or
-                                                                        (#strings.equals(ticket.state, 'New') and #strings.equals(ticket.owner.role, 'Employee'))
+                                                                        (#strings.equals(ticket.state, 'New') and #strings.equals(ticket.ownerRole, 'Employee'))
                                                                     )
                                                                 )
                                                             )
@@ -242,10 +242,10 @@
             let ticket = tickets.find(ticket => ticket.id === ticketId);
 
             if (ticket) {
-                let ticketOwnerEmail = ticket.owner.email;
+                let ticketOwnerEmail = ticket.ownerEmail;
                 let ticketStatus = ticket.state;
-                let ticketAssigneeEmail = ticket.assignee.email;
-                let ticketApproverEmail = ticket.approver.email;
+                let ticketAssigneeEmail = ticket.assigneeEmail;
+                let ticketApproverEmail = ticket.approverEmail;
                 console.log("state: ",ticketStatus,", owner's email: ", ticketOwnerEmail, ", assignee's email: ", ticketAssigneeEmail);
 
                 switch (currentUserRole) {
