@@ -1,12 +1,12 @@
 package com.example.demo.controllers;
 
+import com.example.demo.models.dtos.HistoryDTO;
 import com.example.demo.services.TicketService;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -14,11 +14,9 @@ public class FeedbackController {
     private final TicketService ticketService;
 
     @PostMapping("/leaveFeedback/{ticketId}")
-    public String leaveFeedback(@PathVariable Integer ticketId,
-                                @RequestParam Integer star_rating,
-                                @RequestParam String commentText,
-                                HttpServletRequest request){
-        ticketService.leaveFeedback(ticketId, star_rating, commentText, request);
-        return "redirect:/allTickets";
+    public ResponseEntity<HistoryDTO> leaveFeedback(@PathVariable Integer ticketId,
+                                                    @RequestBody JsonNode json,
+                                                    HttpServletRequest request){
+        return ResponseEntity.ok().body(ticketService.leaveFeedback(ticketId, json, request));
     }
 }

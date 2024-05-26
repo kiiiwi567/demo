@@ -1,18 +1,27 @@
 package com.example.demo.controllers;
 
-import com.example.demo.models.dtos.TicketDTO;
+import com.example.demo.models.dtos.TicketCreateDTO;
+import com.example.demo.models.dtos.TicketEditDTO;
+import com.example.demo.models.dtos.TicketFullDTO;
 import com.example.demo.models.entities.Ticket;
 import com.example.demo.services.TicketService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
+
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 
         //Сделать все через REST
@@ -23,56 +32,74 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 public class TicketController {
     private final TicketService ticketService;
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
 
     @GetMapping("/allTickets")
     public ResponseEntity<?> allTicketsOverview(HttpServletRequest request) {
-        return ResponseEntity.ok(ticketService.getAllTickets(request));
-    }
-    @GetMapping("/createTicket")
-    public ResponseEntity<TicketDTO> createTicket (){
-        return ResponseEntity.ok(new TicketDTO());
+        return ticketService.getAllowedTickets(request);
     }
 
-    @InitBinder("newTicket")
-    public void initBinder(WebDataBinder binder) {
-        binder.setDisallowedFields("attachments","category");
-    }
     @PostMapping(value = "/createTicket")
     public ResponseEntity<String> createTicket(HttpServletRequest request,
-                                               @Valid @ModelAttribute("newTicket") Ticket newTicket,
-                                               @RequestParam(name = "attachments",required = false) MultipartFile[] attachments,
-                                               @RequestParam(name = "category") Integer categoryId,
-                                               @RequestParam(required = false) String comment){
-        ticketService.createTicket(newTicket, request, attachments, comment, categoryId);
-        return ResponseEntity.ok("success");
+                                               @RequestParam(name = "newTicket") String newTicketJson,
+                                               @RequestParam(name = "ticketFiles",required = false) MultipartFile[] ticketFiles){
+        try {
+            TicketCreateDTO newTicket = objectMapper.readValue(newTicketJson, TicketCreateDTO.class);
+            ticketService.createTicket(newTicket, ticketFiles, request);
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (IOException e) {
+            System.out.println("ERROR UUUU" + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping(value = "/createUnauthTicket")
+    public ResponseEntity<String> createUnauthTicket(@RequestParam(name = "newTicket") String newTicketJson,
+                                                    @RequestParam(name = "ticketFiles",required = false) MultipartFile[] ticketFiles){
+        try {
+            TicketCreateDTO newTicket = objectMapper.readValue(newTicketJson, TicketCreateDTO.class);
+            ticketService.createUnauthTicket(newTicket, ticketFiles);
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (IOException e) {
+            System.out.println("ERROR UUUU" + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 
     @GetMapping("/ticketOverview/{id}")
-    public ResponseEntity<?> ticketOverview(@PathVariable Integer id, HttpServletRequest request){
-        return ResponseEntity.ok(ticketService.getTicket(id, request));
+    public ResponseEntity<TicketFullDTO> ticketOverview(@PathVariable Integer id, HttpServletRequest request){
+        return ResponseEntity.ok().body(ticketService.getTicketFullDTO(id));
     }
 
     @GetMapping("/editTicket/{id}")
-    public ResponseEntity<?> editTicket(@PathVariable Integer id){
-        return ResponseEntity.ok(ticketService.getTicketEditDTO(id));
+    public ResponseEntity<TicketEditDTO> editTicket(@PathVariable Integer id){
+        return ResponseEntity.ok().body(ticketService.getTicketEditDTO(id));
     }
 
     @PostMapping(value = "/editTicket/{id}")
     public ResponseEntity<String> saveEditedTicket(HttpServletRequest request,
-                               @Valid @ModelAttribute("newTicket") Ticket editedTicket,
-                               @RequestParam(name = "attachments",required = false) MultipartFile[] attachments,
-                               @RequestParam(name = "category") Integer categoryId,
-                                   RedirectAttributes attributes) {
-        ticketService.editTicket(editedTicket, request, attachments, categoryId);
-        attributes.addAttribute("id", editedTicket.getId());
-        return ResponseEntity.ok("Ticket saved successfully");
+                                                   @RequestParam(name = "editTicket") String editedTicketJson,
+                                                   @RequestParam(name = "newFiles",required = false) MultipartFile[] ticketFiles,
+                                                    RedirectAttributes attributes) {
+//        ticketService.editTicket(editedTicket, request, attachments, categoryId);
+//        attributes.addAttribute("id", editedTicket.getId());
+//        return ResponseEntity.ok("Ticket saved successfully");
+        try {
+            TicketEditDTO dto = objectMapper.readValue(editedTicketJson, TicketEditDTO.class);
+            ticketService.editTicket(dto, ticketFiles, request);
+            return new ResponseEntity<>(HttpStatus.ACCEPTED);
+        } catch (IOException e) {
+            System.out.println("ERROR UUUU" + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 
     @PostMapping("/transmitStatus/{ticketId}")
     public ResponseEntity<String> transmitStatus(@PathVariable Integer ticketId,
-                                @RequestParam String selectedAction,
-                                 HttpServletRequest request){
-        ticketService.transmitStatus(ticketId, selectedAction, request);
-        return ResponseEntity.ok("File downloaded");
+                                                 @RequestBody String status,
+                                                 HttpServletRequest request){
+        String resp = ticketService.transmitStatus(ticketId, status, request);
+        return ResponseEntity.ok().body("{\"status\":\"" + resp + "\"}");
     }
 }

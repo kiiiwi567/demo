@@ -32,6 +32,9 @@ public interface TicketRepository extends JpaRepository <Ticket, Integer> {
 
     @Query("SELECT t FROM Ticket t WHERE t.id = :ticketId")
     Ticket getTicketForOverviewById(@Param ("ticketId") Integer ticketId);
+
+    @Query("SELECT t FROM Ticket t")
+    List<Ticket> getAllTickets();
 }
 
 

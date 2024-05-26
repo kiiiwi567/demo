@@ -3,6 +3,7 @@ package com.example.demo.models.dtos;
 import com.example.demo.models.enums.TicketState;
 import com.example.demo.models.enums.TicketUrgency;
 import com.example.demo.models.enums.UserRole;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,7 +16,10 @@ import java.time.LocalDate;
 public class TicketDTO {
     private Integer id;
     private String name;
+    private String category;
+    @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate createdOn;
+    @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate desiredResolutionDate;
     private String ownerEmail;
     @Enumerated(EnumType.STRING)

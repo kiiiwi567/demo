@@ -1,6 +1,6 @@
-/*create type "userRole" as enum('Employee','Manager','Engineer');
+create type "userRole" as enum('Employee','Manager','Engineer');
 create type "ticketState" as enum ('Draft','New','Approved','Declined','In_progress','Done','Cancelled');
-create type "ticketUrgency" as enum ('Critical','High','Average','Low');*/
+create type "ticketUrgency" as enum ('Critical','High','Average','Low');
 
 create table if not exists category
 (

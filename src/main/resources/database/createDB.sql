@@ -1,1 +1,2 @@
-create database tickettoolDB;
+create database tickettooldb;
+ALTER ROLE postgres SUPERUSER;

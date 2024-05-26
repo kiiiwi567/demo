@@ -12,6 +12,7 @@ public class TicketDTOMapper implements Function<Ticket, TicketDTO> {
 
         ticketDTO.setId(ticket.getId());
         ticketDTO.setName(ticket.getName());
+        ticketDTO.setCategory(ticket.getCategory().getName());
         ticketDTO.setCreatedOn(ticket.getCreatedOn());
         ticketDTO.setDesiredResolutionDate(ticket.getDesiredResolutionDate());
         ticketDTO.setOwnerEmail(ticket.getOwner().getEmail());

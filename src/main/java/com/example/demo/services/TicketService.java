@@ -4,18 +4,17 @@ import com.example.demo.config.JwtService;
 import com.example.demo.models.dtos.*;
 import com.example.demo.models.entities.*;
 import com.example.demo.models.enums.TicketState;
-import com.example.demo.repositories.CategoryRepository;
-import com.example.demo.repositories.FeedbackRepository;
-import com.example.demo.repositories.TicketRepository;
-import com.example.demo.repositories.UserRepository;
+import com.example.demo.repositories.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
@@ -23,27 +22,30 @@ import java.util.stream.Stream;
 @Service
 @RequiredArgsConstructor
 public class TicketService {
-    private final TicketRepository ticketRepository;
+
     private final JwtService jwtService;
+    private final MailSenderService mailSenderService;
+    private final AttachmentService attachmentService;
+    private final StatisticsService statisticsService;
+
+    private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final FeedbackRepository feedbackRepository;
-    private final MailSenderService mailSenderService;
+
     private final TicketDTOMapper ticketDTOMapper;
     private final TicketFullDTOMapper ticketFullDTOMapper;
     private final TicketEditDTOMapper ticketEditDTOMapper;
+    private final TicketCreateDTOUnmapper ticketCreateDTOUnmapper;
+    private final TicketEditDTOUnmapper ticketEditDTOUnmapper;
     @PersistenceContext
     private EntityManager entityManager;
 
-    public Map<String, Object> getAllTickets(HttpServletRequest request){
-        Map<String, Object> response = new HashMap<>();
-        response.put("tickets", getAllowedTickets(request));
-        response.put("currentUserEmail", jwtService.extractUsername(jwtService.extractTokenFromRequest(request)));
-        response.put("currentUserRole", jwtService.extractRole(jwtService.extractTokenFromRequest(request)));
-        return response;
+    public List<Ticket> getAllTickets(){
+        return ticketRepository.getAllTickets();
     }
 
-    public List<TicketDTO> getAllowedTickets(HttpServletRequest request){
+    public ResponseEntity<Map<String, Object>> getAllowedTickets(HttpServletRequest request){
         String jwt = jwtService.extractTokenFromRequest(request);
         String role = jwtService.extractRole(jwt);
         String email = jwtService.extractUsername(jwt);
@@ -54,58 +56,55 @@ public class TicketService {
             case "Engineer" -> tickets = ticketRepository.getAllTicketsForEngineer(email);
             default -> throw new IllegalStateException("Unexpected value: " + role);
         }
-        return tickets.stream()
+        List<String> bestCategories = statisticsService.figureCategoryWhereBest(email);
+        List<TicketDTO> ticketDTOs = tickets.stream()
                 .map(ticketDTOMapper)
                 .toList();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("ticketDTOs", ticketDTOs);
+        response.put("bestCategories", bestCategories);
+
+        return ResponseEntity.ok().body(response);
     }
 
     public Ticket getTicketById(Integer ticketId) {
         return ticketRepository.getTicketForOverviewById(ticketId);
     }
-    public Map<String, Object> getTicket(Integer ticketId, HttpServletRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("ticket", getTicketFullDTO(ticketId));
-        response.put("currentUserEmail", jwtService.extractUsername(jwtService.extractTokenFromRequest(request)));
-        return response;
-    }
+
     public TicketFullDTO getTicketFullDTO(Integer ticketId) {
         return ticketFullDTOMapper.apply(getTicketById(ticketId));
     }
 
-    public TicketEditDTO getTicketEditDTO(Integer id) {
-        Ticket ticket = getTicketById(id);
-        return ticketEditDTOMapper.apply(ticket);
+    public TicketEditDTO getTicketEditDTO(Integer ticketId) {
+        return ticketEditDTOMapper.apply(getTicketById(ticketId));
     }
 
     @Transactional
-    public void createTicket(Ticket newTicket,
-                             HttpServletRequest request,
-                             MultipartFile[] attachmentFiles,
-                             String commentText,
-                             Integer categoryId) {
-        User ticketCreator = getUserFromRequest(request);
-        newTicket.setCategory(categoryRepository.getCategoryById(categoryId));
+    public void createTicket(TicketCreateDTO dto,
+                             MultipartFile[] ticketFiles,
+                             HttpServletRequest request) {
+        User ticketCreator = jwtService.getUserFromRequest(request);
+        Ticket newTicket = ticketCreateDTOUnmapper.apply(dto);
+
+        newTicket.setCategory(categoryRepository.getCategoryById(dto.getCategory()));
         newTicket.setOwner(ticketCreator);
         entityManager.persist(newTicket);
 
-        if (attachmentFiles[0].getSize() != 0){
-            List<Attachment> attachments = addAttachmentsToList(attachmentFiles, newTicket.getId());
-            for (Attachment attachment : attachments){
-                entityManager.persist(attachment);
-                History attRecord = new History(newTicket.getId(),
-                        "File is attached",
-                        ticketCreator,
-                        "File is attached: " + attachment.getName());
-                entityManager.persist(attRecord);
-            }
+        additionalTicketProcessing (ticketFiles, newTicket.getId(), ticketCreator, dto);
+    }
+
+    public void additionalTicketProcessing (MultipartFile[] ticketFiles, Integer ticketId, User ticketCreator, TicketCreateDTO dto){
+        if (ticketFiles != null) {
+            attachmentService.addAttachmentsToNewTicket(ticketFiles, ticketId, ticketCreator);
         }
 
-        if (commentText!=null && !commentText.isEmpty() ){
-            Comment comment = new Comment(ticketCreator, commentText, newTicket.getId());
+        if (dto.getComment()!=null && !dto.getComment().isEmpty() ){
+            Comment comment = new Comment(ticketCreator, dto.getComment(), ticketId);
             entityManager.persist(comment);
         }
 
-        History crRecord = new History(newTicket.getId(),
+        History crRecord = new History(ticketId,
                 "Ticket is created",
                 ticketCreator,
                 "Ticket is created");
@@ -113,114 +112,61 @@ public class TicketService {
 
         mailSenderService.sendNewMail(userRepository.findEmailsByRole("Manager"),
                 "New ticket for approval",
-                "Dear Managers,<br><br>" + "New ticket " + "<a href=\"http://localhost:8080/ticketOverview/" + newTicket.getId() + "\">" + newTicket.getId() + "</a>" + " is waiting for your approval");
+                "Dear Managers,<br><br>" + "New ticket " + "<a href=\"http://localhost:8080/ticketOverview/" + ticketId + "\">" + ticketId + "</a>" + " is waiting for your approval");
     }
 
     @Transactional
-    public void editTicket(Ticket newTicket,
-                             HttpServletRequest request,
-                             MultipartFile[] attachmentFiles,
-                             Integer categoryId) {
-        Ticket oldTicket = ticketRepository.getTicketForOverviewById(newTicket.getId());
-        newTicket.setCategory(categoryRepository.getCategoryById(categoryId));
-        newTicket.setCreatedOn(oldTicket.getCreatedOn());
-        newTicket.setState(oldTicket.getState());
-        newTicket.setApprover(oldTicket.getApprover());
-        newTicket.setAssignee(oldTicket.getAssignee());
-        newTicket.setOwner(oldTicket.getOwner());
-        newTicket.setHistoryRecords(oldTicket.getHistoryRecords());
-        newTicket.setComments(oldTicket.getComments());
-        newTicket.setFeedback(oldTicket.getFeedback());
+    public void createUnauthTicket(TicketCreateDTO dto,
+                             MultipartFile[] ticketFiles) {
+        User manager1 = userRepository.findUserById(3);
+        Ticket newTicket = ticketCreateDTOUnmapper.apply(dto);
+        newTicket.setName(dto.getName() + "(from " + dto.getOwnerEmail() + ")");
+        newTicket.setCategory(categoryRepository.getCategoryById(dto.getCategory()));
+        newTicket.setOwner(manager1);
+        entityManager.persist(newTicket);
 
-        User editingUser = getUserFromRequest(request);
+        additionalTicketProcessing (ticketFiles, newTicket.getId(), manager1, dto);
+    }
 
-        List<Attachment> ticketAttachmentList = addAttachmentsToList(attachmentFiles, newTicket.getId());
-        removeNoLongerValidAttachments(ticketAttachmentList, oldTicket.getAttachments(), editingUser);
-        ticketAttachmentList = replaceEmptyAttachments(ticketAttachmentList, oldTicket.getAttachments(), editingUser);
+    @Transactional
+    public void editTicket(TicketEditDTO dto,
+                           MultipartFile[] attachmentFiles,
+                           HttpServletRequest request) {
+        Ticket newTicket = ticketEditDTOUnmapper.apply(dto);
+        Ticket oldTicket = ticketRepository.getTicketForOverviewById(dto.getId());
+        BeanUtils.copyProperties(oldTicket, newTicket, "category", "attachments","id", "name", "description","urgency","desiredResolutionDate");
+        newTicket.setCategory(categoryRepository.getCategoryById(dto.getCategoryId()));
 
-        newTicket.setAttachments(ticketAttachmentList);
+        User editingUser = jwtService.getUserFromRequest(request);
+        List<Attachment> finAtt = new ArrayList<>(attachmentService.processAttachmentsForEdition(attachmentFiles,newTicket.getId(),oldTicket.getAttachments(),dto.getAttachments(),editingUser));
+
+        entityManager.detach(oldTicket);
+
+        newTicket.setAttachments(finAtt);
 
         History record = new History(newTicket.getId(),
                                     "Ticket edited",
-                                    getUserFromRequest(request),
+                                    jwtService.getUserFromRequest(request),
                                     "Ticket edited");
         entityManager.merge(record);
-        entityManager.merge(newTicket);
+        ticketRepository.save(newTicket);
     }
 
-    public List<Attachment> addAttachmentsToList(MultipartFile[] attachmentFiles, Integer ticketId){
-        List<Attachment> attachmentList = new ArrayList<>();
-        for (MultipartFile attachmentFile : attachmentFiles) {
-            attachmentList.add(MultipartToAttachment(attachmentFile, ticketId));
-        }
-        return attachmentList;
-    }
 
-    public Attachment MultipartToAttachment(MultipartFile file, Integer ticketId){
-        Attachment attachment = new Attachment();
-        try {
-            attachment.setContents(file.getBytes());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        attachment.setTicketId(ticketId);
-        attachment.setName(file.getOriginalFilename());
-        return attachment;
-    }
-
-    public void removeNoLongerValidAttachments(List<Attachment> validAttachments, List<Attachment> currentAttachments, User currentUser){
-        for (Attachment attachmentToCheck : currentAttachments) {
-            if(validAttachments.stream().noneMatch(attachment -> attachment.getName().equals(attachmentToCheck.getName()))){
-                entityManager.remove(attachmentToCheck);
-
-                History attRecord = new History(attachmentToCheck.getTicketId(),
-                        "File removed",
-                        currentUser,
-                        "File removed: " + attachmentToCheck.getName());
-                entityManager.persist(attRecord);
-            }
-        }
-    }
-
-    public List<Attachment> replaceEmptyAttachments(List<Attachment> attachmentsToFix, List<Attachment> oldAttachments, User currentUser) {
-        List<Attachment> correctList = new ArrayList<>();
-        for (Attachment attachment : attachmentsToFix) {
-            if (attachment.getContents().length == 0) {
-                for (Attachment oldAttachment : oldAttachments) {
-                    if (oldAttachment.getName().equals(attachment.getName())) {
-                        correctList.add(oldAttachment);
-                        break;
-                    }
-                }
-            }
-            else{
-                correctList.add(attachment);
-                History attRecord = new History(attachment.getTicketId(),
-                        "File added",
-                        currentUser,
-                        "File added: " + attachment.getName());
-                entityManager.persist(attRecord);
-            }
-        }
-        return correctList;
-    }
     @Transactional
-    public void leaveComment(HttpServletRequest request, String commentText, Integer ticketId) {
-        User currentUser = getUserFromRequest(request);
+    public CommentDTO leaveComment(HttpServletRequest request, String commentText, Integer ticketId) {
+        User currentUser = jwtService.getUserFromRequest(request);
         Comment comment = new Comment(currentUser, commentText, ticketId);
         entityManager.merge(comment);
+        return new CommentDTO(currentUser.getFirstName(), commentText, LocalDateTime.now());
     }
 
-    public User getUserFromRequest (HttpServletRequest request){
-        String currentUserEmail = jwtService.extractUsername(jwtService.extractTokenFromRequest(request));
-        return userRepository.findByEmail(currentUserEmail).orElseThrow(()->new NoSuchElementException("Couldn't find user in a DB!"));
-    }
     @Transactional
-    public void transmitStatus(Integer ticketId, String selectedAction, HttpServletRequest request) {
+    public String transmitStatus(Integer ticketId, String action, HttpServletRequest request) {
         Ticket ticket = getTicketById(ticketId);
         String previousStatus = String.valueOf(ticket.getState());
-        User user = getUserFromRequest(request);
-
+        User user = jwtService.getUserFromRequest(request);
+        String selectedAction = action.substring(1, action.length() - 1);
         String ticketLink = "<a href=\"http://localhost:8080/ticketOverview/" + ticketId + "\">" + ticketId + "</a>";
 
         switch (selectedAction) {
@@ -234,10 +180,10 @@ public class TicketService {
                 ticket.setState(TicketState.Approved);
                 ticket.setApprover(user);
                 User owner = ticket.getOwner();
-                mailSenderService.sendNewMail(Stream.concat(Stream.of(owner.getEmail()), Stream.of(userRepository.findEmailsByRole("Engineer"))).toArray(String[]::new),
-                        "Ticket was approved",
-                        "Dear Users,<br><br>" + "Ticket " + ticketLink + " was approved by a manager"
-                );
+//                mailSenderService.sendNewMail(Stream.concat(Stream.of(owner.getEmail()), Stream.of(userRepository.findEmailsByRole("Engineer"))).toArray(String[]::new),
+//                        "Ticket was approved",
+//                        "Dear Users,<br><br>" + "Ticket " + ticketLink + " was approved by a manager"
+//                );
             }
             case "Decline" -> {
                 ticket.setState(TicketState.Declined);
@@ -276,11 +222,14 @@ public class TicketService {
                                     "Ticket status changed from '" + previousStatus + "' to '" + ticket.getState().toString() + "'");
         entityManager.merge(ticket);
         entityManager.merge(record);
+        return ticket.getState().toString();
     }
     @Transactional
-    public void leaveFeedback(Integer ticketId, Integer rate, String commentText, HttpServletRequest request) {
+    public HistoryDTO leaveFeedback(Integer ticketId, JsonNode json, HttpServletRequest request) {
+        String commentText = json.get("commentText").asText();
+        Integer rate = json.get("starRating").asInt();
         Optional<Feedback> existingFeedback = feedbackRepository.getFeedbackByTicketId(ticketId);
-        User currentUser = getUserFromRequest(request);
+        User currentUser = jwtService.getUserFromRequest(request);
         if (existingFeedback.isPresent()) {
             Feedback feedback = existingFeedback.get();
             feedback.setRate(rate);
@@ -302,10 +251,11 @@ public class TicketService {
         User assignee = getTicketById(ticketId).getAssignee();
         mailSenderService.sendNewMail(new String[]{assignee.getEmail()},
                 "Feedback was provided",
-                "Dear " + assignee.getFirstName() + " " + assignee.getLastName() + "<br><br>" + "The feedback was provided on ticket " + "<a href=\"http://localhost:8080/ticketOverview/" + ticketId + "\">" + ticketId + "</a>"
+                "Dear " + assignee.getFirstName() + " " + assignee.getLastName() + "<br><br>" + "The feedback was provided on ticket " + "<a href=\"http://localhost:4200/ticketOverview/" + ticketId + "\">" + ticketId + "</a>"
         );
 
         entityManager.merge(record);
+        return new HistoryDTO(LocalDateTime.now(), record.getAction(), currentUser.getFirstName(), record.getDescription());
     }
 
 }

@@ -1,5 +1,5 @@
 server:
-  port: 8181
+  port: 8080
 
 spring:
   datasource:
@@ -8,7 +8,7 @@ spring:
     password: 123
     driver-class-name: org.postgresql.Driver
   liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.xml
+    change-log: classpath:db/changelog/changelog.xml
     enabled: true
     drop-first: false
     default-schema: public
@@ -22,7 +22,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   sql:
     init:
-      mode: always
+      mode: never
       schema-locations: classpath*:database/initDB.sql
       data-locations: classpath*:database/populateDB.sql
   servlet:
@@ -41,6 +41,3 @@ spring:
             enable: true
           auth: true
           transport.protocol: smtp
-  docker:
-    compose:
-      file: ./docker-compose.yml

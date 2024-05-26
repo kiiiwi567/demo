@@ -11,8 +11,7 @@ public class TicketFullDTOMapper extends TicketDTOMapper {
         TicketDTO shortDTO = super.apply(ticket);
         TicketFullDTO fullDTO = new TicketFullDTO();
         BeanUtils.copyProperties(shortDTO,fullDTO);
-
-        fullDTO.setCategory(ticket.getCategory().getName());
+        fullDTO.setDescription(ticket.getDescription());
         fullDTO.setOwnerUsername(ticket.getOwner().getFirstName());
 
         if(ticket.getApprover() != null) {

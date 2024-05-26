@@ -1,10 +1,14 @@
-FROM maven:3.8.4-openjdk-17 as builder
-WORKDIR /app
-COPY . /app/.
-RUN mvn -f /app/pom.xml clean package -Dmaven.test.skip=true
+FROM eclipse-temurin:17-jdk-alpine as builder
+
+WORKDIR /opt/app
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
+RUN ./mvnw dependency:go-offline
+COPY ./src ./src
+RUN ./mvnw clean install -Dmaven.test.skip=true
 
 FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
-COPY --from=builder /app/target/demo.jar /app/demo.jar
-EXPOSE 8181
-ENTRYPOINT ["java", "-jar", "/app/demo.jar"]
+WORKDIR /opt/app
+COPY --from=builder /opt/app/target/*.jar /opt/app/*.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/opt/app/*.jar"]

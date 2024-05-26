@@ -12,7 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 public class TicketFullDTO extends TicketDTO {
-    private String category;
     private String description;
     private String ownerUsername;
     private String assigneeUsername;

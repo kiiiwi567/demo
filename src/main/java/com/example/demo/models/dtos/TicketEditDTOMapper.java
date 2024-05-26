@@ -1,8 +1,11 @@
 package com.example.demo.models.dtos;
 
+import com.example.demo.models.entities.Attachment;
 import com.example.demo.models.entities.Ticket;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 @Service
 public class TicketEditDTOMapper implements Function<Ticket, TicketEditDTO> {
@@ -17,7 +20,11 @@ public class TicketEditDTOMapper implements Function<Ticket, TicketEditDTO> {
         dto.setUrgency(ticket.getUrgency());
         dto.setDesiredResolutionDate(ticket.getDesiredResolutionDate());
         if(ticket.getAttachments().size() != 0){
-            dto.setAttachments(ticket.getAttachments());
+            List<AttachmentDTO> attDTOs = new ArrayList<>();
+            for(Attachment att: ticket.getAttachments()){
+                attDTOs.add(new AttachmentDTO(att.getId(), att.getName()));
+            }
+            dto.setAttachments(attDTOs);
         }
         return dto;
     }
