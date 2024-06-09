@@ -2,6 +2,7 @@ package com.example.demo.services;
 
 import com.example.demo.config.JwtService;
 import com.example.demo.models.dtos.*;
+import com.example.demo.models.dtos.mappings.*;
 import com.example.demo.models.entities.*;
 import com.example.demo.models.enums.TicketState;
 import com.example.demo.repositories.*;
@@ -41,10 +42,6 @@ public class TicketService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    public List<Ticket> getAllTickets(){
-        return ticketRepository.getAllTickets();
-    }
-
     public ResponseEntity<Map<String, Object>> getAllowedTickets(HttpServletRequest request){
         String jwt = jwtService.extractTokenFromRequest(request);
         String role = jwtService.extractRole(jwt);
@@ -56,15 +53,16 @@ public class TicketService {
             case "Engineer" -> tickets = ticketRepository.getAllTicketsForEngineer(email);
             default -> throw new IllegalStateException("Unexpected value: " + role);
         }
-        List<String> bestCategories = statisticsService.figureCategoryWhereBest(email);
+        Map<String, Object> response = new HashMap<>();
         List<TicketDTO> ticketDTOs = tickets.stream()
                 .map(ticketDTOMapper)
                 .toList();
-
-        Map<String, Object> response = new HashMap<>();
         response.put("ticketDTOs", ticketDTOs);
-        response.put("bestCategories", bestCategories);
-
+        response.put("bestCategories", null);
+        if(role.equals("Engineer")){
+            List<String> bestCategories = statisticsService.figureCategoryWhereBest(email);
+            response.replace("bestCategories", bestCategories);
+        }
         return ResponseEntity.ok().body(response);
     }
 
@@ -105,14 +103,14 @@ public class TicketService {
         }
 
         History crRecord = new History(ticketId,
-                "Ticket is created",
+                "Заявка создана",
                 ticketCreator,
-                "Ticket is created");
+                "Заявка создана");
         entityManager.persist(crRecord);
 
         mailSenderService.sendNewMail(userRepository.findEmailsByRole("Manager"),
-                "New ticket for approval",
-                "Dear Managers,<br><br>" + "New ticket " + "<a href=\"http://localhost:8080/ticketOverview/" + ticketId + "\">" + ticketId + "</a>" + " is waiting for your approval");
+                "Новая заявка",
+                "Уважаемые мееджеры,<br><br>" + "Новая заявка " + "<a href=\"http://localhost:4200/ticketOverview/" + ticketId + "\">" + ticketId + "</a>" + " ожидает подтверждения");
     }
 
     @Transactional
@@ -145,9 +143,9 @@ public class TicketService {
         newTicket.setAttachments(finAtt);
 
         History record = new History(newTicket.getId(),
-                                    "Ticket edited",
+                                    "Заявка изменена",
                                     jwtService.getUserFromRequest(request),
-                                    "Ticket edited");
+                                    "Заявка изменена");
         entityManager.merge(record);
         ticketRepository.save(newTicket);
     }
@@ -167,31 +165,31 @@ public class TicketService {
         String previousStatus = String.valueOf(ticket.getState());
         User user = jwtService.getUserFromRequest(request);
         String selectedAction = action.substring(1, action.length() - 1);
-        String ticketLink = "<a href=\"http://localhost:8080/ticketOverview/" + ticketId + "\">" + ticketId + "</a>";
+        String ticketLink = "<a href=\"http://localhost:4200/ticketOverview/" + ticketId + "\">" + ticketId + "</a>";
 
         switch (selectedAction) {
             case "Submit" -> {
                 ticket.setState(TicketState.New);
                 mailSenderService.sendNewMail(userRepository.findEmailsByRole("Manager"),
-                        "New ticket for approval",
-                        "Dear Managers,<br><br>" + "New ticket " + ticketLink + " is waiting for your approval");
+                        "Новая заявка",
+                        "Уважаемые менеджеры,<br><br>" + "Новая заявка " + ticketLink + " ожидает подтверждения");
             }
             case "Approve" -> {
                 ticket.setState(TicketState.Approved);
                 ticket.setApprover(user);
                 User owner = ticket.getOwner();
-//                mailSenderService.sendNewMail(Stream.concat(Stream.of(owner.getEmail()), Stream.of(userRepository.findEmailsByRole("Engineer"))).toArray(String[]::new),
-//                        "Ticket was approved",
-//                        "Dear Users,<br><br>" + "Ticket " + ticketLink + " was approved by a manager"
-//                );
+                mailSenderService.sendNewMail(Stream.concat(Stream.of(owner.getEmail()), Stream.of(userRepository.findEmailsByRole("Engineer"))).toArray(String[]::new),
+                        "Заявка одобрена",
+                        "Уважаемые инженеры и пользователь,<br><br>" + "Заявка " + ticketLink + " одобрена менеджером"
+                );
             }
             case "Decline" -> {
                 ticket.setState(TicketState.Declined);
                 ticket.setApprover(user);
                 User owner = ticket.getOwner();
                 mailSenderService.sendNewMail(new String[]{owner.getEmail()},
-                        "Ticket was declined",
-                        "Dear " + owner.getFirstName() + " " + owner.getLastName() + "<br><br>" + "Ticket " + ticketLink + " was declined by a manager"
+                        "Заявка отклонена",
+                        "Уважаемый " + owner.getFirstName() + " " + owner.getLastName() + "<br><br>" + "Заявка " + ticketLink + " отклонена менеджером"
                 );
             }
             case "Cancel" -> {
@@ -199,8 +197,8 @@ public class TicketService {
                 ticket.setApprover(user);
                 User owner = ticket.getOwner();
                 mailSenderService.sendNewMail(new String[]{owner.getEmail(),user.getEmail()},
-                        "Ticket was cancelled",
-                        "Dear " + owner.getFirstName() + " " + owner.getLastName() + "<br><br>" + "Ticket " + ticketLink + " was cancelled by a manager"
+                        "Заявка отменена",
+                        "Уважаемый " + owner.getFirstName() + " " + owner.getLastName() + "<br><br>" + "Заявка " + ticketLink + " отменена инженером"
                 );
             }
             case "Assign to me" -> {
@@ -211,15 +209,15 @@ public class TicketService {
                 ticket.setState(TicketState.Done);
                 User owner = ticket.getOwner();
                 mailSenderService.sendNewMail(new String[]{owner.getEmail()},
-                        "Ticket was done",
-                        "Dear " + owner.getFirstName() + " " + owner.getLastName() + "<br><br>" + "Ticket " + ticketLink + " was done by an engineer"
+                        "Заявка выполнена",
+                        "Уважаемый " + owner.getFirstName() + " " + owner.getLastName() + "<br><br>" + "Заявка " + ticketLink + " была выполнена"
                 );
             }
         }
         History record = new History(ticketId,
-                                    "Ticket status changed",
-                                    user,
-                                    "Ticket status changed from '" + previousStatus + "' to '" + ticket.getState().toString() + "'");
+                "Статус заявки изменён",
+                user,
+                "Статус заявки изменён с'" + previousStatus + "' на '" + ticket.getState().toString() + "'");
         entityManager.merge(ticket);
         entityManager.merge(record);
         return ticket.getState().toString();
@@ -242,20 +240,117 @@ public class TicketService {
         }
         String commentAddition = null;
         if (!commentText.isBlank()){
-            commentAddition = "with comment: " + commentText;
+            commentAddition = "с комментарием: " + commentText;
         }
         History record = new History(ticketId,
-                "Ticket completion rated",
+                "Выполнение заявки оценено!",
                 currentUser,
-                "Ticket completion was rated " + "★".repeat(rate) + Objects.toString(commentAddition, ""));
+                "Выполнение заявки оценено " + "★".repeat(rate) + Objects.toString(commentAddition, ""));
         User assignee = getTicketById(ticketId).getAssignee();
         mailSenderService.sendNewMail(new String[]{assignee.getEmail()},
-                "Feedback was provided",
-                "Dear " + assignee.getFirstName() + " " + assignee.getLastName() + "<br><br>" + "The feedback was provided on ticket " + "<a href=\"http://localhost:4200/ticketOverview/" + ticketId + "\">" + ticketId + "</a>"
+                "Новый отзыв!",
+                "Уважаемый " + assignee.getFirstName() + " " + assignee.getLastName() + "<br><br>" + "Был предоставлен отзыв на выполнение заявки номер " + "<a href=\"http://localhost:4200/ticketOverview/" + ticketId + "\">" + ticketId + "</a>"
         );
 
         entityManager.merge(record);
         return new HistoryDTO(LocalDateTime.now(), record.getAction(), currentUser.getFirstName(), record.getDescription());
     }
+    // english ver.
+//    @Transactional
+//    public String transmitStatus(Integer ticketId, String action, HttpServletRequest request) {
+//        Ticket ticket = getTicketById(ticketId);
+//        String previousStatus = String.valueOf(ticket.getState());
+//        User user = jwtService.getUserFromRequest(request);
+//        String selectedAction = action.substring(1, action.length() - 1);
+//        String ticketLink = "<a href=\"http://localhost:8080/ticketOverview/" + ticketId + "\">" + ticketId + "</a>";
+//
+//        switch (selectedAction) {
+//            case "Submit" -> {
+//                ticket.setState(TicketState.New);
+//                mailSenderService.sendNewMail(userRepository.findEmailsByRole("Manager"),
+//                        "New ticket for approval",
+//                        "Dear Managers,<br><br>" + "New ticket " + ticketLink + " is waiting for your approval");
+//            }
+//            case "Approve" -> {
+//                ticket.setState(TicketState.Approved);
+//                ticket.setApprover(user);
+//                User owner = ticket.getOwner();
+//                mailSenderService.sendNewMail(Stream.concat(Stream.of(owner.getEmail()), Stream.of(userRepository.findEmailsByRole("Engineer"))).toArray(String[]::new),
+//                        "Ticket was approved",
+//                        "Dear Users,<br><br>" + "Ticket " + ticketLink + " was approved by a manager"
+//                );
+//            }
+//            case "Decline" -> {
+//                ticket.setState(TicketState.Declined);
+//                ticket.setApprover(user);
+//                User owner = ticket.getOwner();
+//                mailSenderService.sendNewMail(new String[]{owner.getEmail()},
+//                        "Ticket was declined",
+//                        "Dear " + owner.getFirstName() + " " + owner.getLastName() + "<br><br>" + "Ticket " + ticketLink + " was declined by a manager"
+//                );
+//            }
+//            case "Cancel" -> {
+//                ticket.setState(TicketState.Cancelled);
+//                ticket.setApprover(user);
+//                User owner = ticket.getOwner();
+//                mailSenderService.sendNewMail(new String[]{owner.getEmail(),user.getEmail()},
+//                        "Ticket was cancelled",
+//                        "Dear " + owner.getFirstName() + " " + owner.getLastName() + "<br><br>" + "Ticket " + ticketLink + " was cancelled by a manager"
+//                );
+//            }
+//            case "Assign to me" -> {
+//                ticket.setState(TicketState.In_progress);
+//                ticket.setAssignee(user);
+//            }
+//            case "Done" -> {
+//                ticket.setState(TicketState.Done);
+//                User owner = ticket.getOwner();
+//                mailSenderService.sendNewMail(new String[]{owner.getEmail()},
+//                        "Ticket was done",
+//                        "Dear " + owner.getFirstName() + " " + owner.getLastName() + "<br><br>" + "Ticket " + ticketLink + " was done by an engineer"
+//                );
+//            }
+//        }
+//        History record = new History(ticketId,
+//                                    "Ticket status changed",
+//                                    user,
+//                                    "Ticket status changed from '" + previousStatus + "' to '" + ticket.getState().toString() + "'");
+//        entityManager.merge(ticket);
+//        entityManager.merge(record);
+//        return ticket.getState().toString();
+//    }
+//    @Transactional
+//    public HistoryDTO leaveFeedback(Integer ticketId, JsonNode json, HttpServletRequest request) {
+//        String commentText = json.get("commentText").asText();
+//        Integer rate = json.get("starRating").asInt();
+//        Optional<Feedback> existingFeedback = feedbackRepository.getFeedbackByTicketId(ticketId);
+//        User currentUser = jwtService.getUserFromRequest(request);
+//        if (existingFeedback.isPresent()) {
+//            Feedback feedback = existingFeedback.get();
+//            feedback.setRate(rate);
+//            feedback.setText(commentText);
+//            feedback.setTimestamp(LocalDateTime.now());
+//            entityManager.merge(feedback);
+//        } else {
+//            Feedback newFeedback = new Feedback(currentUser.getId(), rate, commentText, ticketId);
+//            entityManager.merge(newFeedback);
+//        }
+//        String commentAddition = null;
+//        if (!commentText.isBlank()){
+//            commentAddition = "with comment: " + commentText;
+//        }
+//        History record = new History(ticketId,
+//                "Ticket completion rated",
+//                currentUser,
+//                "Ticket completion was rated " + "★".repeat(rate) + Objects.toString(commentAddition, ""));
+//        User assignee = getTicketById(ticketId).getAssignee();
+//        mailSenderService.sendNewMail(new String[]{assignee.getEmail()},
+//                "Feedback was provided",
+//                "Dear " + assignee.getFirstName() + " " + assignee.getLastName() + "<br><br>" + "The feedback was provided on ticket " + "<a href=\"http://localhost:4200/ticketOverview/" + ticketId + "\">" + ticketId + "</a>"
+//        );
+//
+//        entityManager.merge(record);
+//        return new HistoryDTO(LocalDateTime.now(), record.getAction(), currentUser.getFirstName(), record.getDescription());
+//    }
 
 }

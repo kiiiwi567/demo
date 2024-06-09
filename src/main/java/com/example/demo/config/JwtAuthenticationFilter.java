@@ -29,7 +29,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         final String authHeader = request.getHeader("cookie") + ";";
-        //final String authHeader = request.getHeader("Authorization"); //for postman
         final String jwt;
         final String userEmail;
         if (!authHeader.contains("jwtToken=") ) {

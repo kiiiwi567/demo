@@ -1,5 +1,6 @@
-package com.example.demo.models.dtos;
+package com.example.demo.models.dtos.mappings;
 
+import com.example.demo.models.dtos.TicketStatDTO;
 import com.example.demo.models.entities.History;
 import com.example.demo.models.entities.Ticket;
 import com.example.demo.models.enums.TicketState;
@@ -20,7 +21,7 @@ public class TicketStatDTOMapper implements Function<Ticket, TicketStatDTO> {
         LocalDateTime from = ticket.getCreatedOn().atTime(12,1);
 
         LocalDateTime to = ticket.getHistoryRecords().stream()
-                .filter(h -> h.getDescription().endsWith("to 'Done'"))
+                .filter(h -> h.getDescription().matches(".*на '(Выполнена|Отменена|Отклонена)'"))
                 .findFirst()
                 .map(History::getTimestamp)
                 .orElse(LocalDateTime.now());

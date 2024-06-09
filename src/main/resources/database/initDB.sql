@@ -65,7 +65,7 @@ create table if not exists feedback
     id serial primary key,
     user_id int references "user" (id),
     rate int,
-    "date" date,
+    "timestamp" timestamp without time zone,
     "text" varchar(500),
     ticket_id int references ticket (id) ON DELETE CASCADE
 );

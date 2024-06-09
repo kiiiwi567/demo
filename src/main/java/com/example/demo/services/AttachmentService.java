@@ -73,9 +73,9 @@ public class AttachmentService {
             attachmentRepository.deleteAttachmentById(att.id());
             idsToDelete.add(att.id());
             History attRecord = new History(ticketID,
-                    "File removed",
+                    "Файл удалён",
                     currentUser,
-                    "File removed: " + att.fileName());
+                    "Файл удалён: " + att.fileName());
             entityManager.persist(attRecord);
         }
         return idsToDelete;
@@ -86,9 +86,9 @@ public class AttachmentService {
         for (Attachment attachment : attachments){
             entityManager.persist(attachment);
             History attRecord = new History(ticketId,
-                    "File is attached",
+                    "Файл прикреплён",
                     ticketCreator,
-                    "File is attached: " + attachment.getName());
+                    "Файл прикреплён: " + attachment.getName());
             entityManager.persist(attRecord);
         }
     }

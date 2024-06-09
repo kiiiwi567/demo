@@ -1,6 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.models.dtos.*;
+import com.example.demo.models.dtos.mappings.TicketStatDTOMapper;
 import com.example.demo.models.entities.Ticket;
 import com.example.demo.models.entities.User;
 import com.example.demo.models.enums.PeriodEnum;
@@ -111,7 +112,7 @@ public class StatisticsService {
             for (Map.Entry<String, List<TicketStatDTO>> assigneeEntry : ticketsByAssignee.entrySet()) {
                 String assignee = assigneeEntry.getKey();
                 List<TicketStatDTO> assigneeTickets = assigneeEntry.getValue();
-                int activeTickets = activeTicketsByAssignee.get(assignee);
+                int activeTickets = activeTicketsByAssignee.get(assignee) != null ? activeTicketsByAssignee.get(assignee) : 0;
                 double score = calculateScore(assigneeTickets, activeTickets);
                 assigneeScores.put(assignee, score);
             }

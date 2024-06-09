@@ -1,6 +1,6 @@
-package com.example.demo.models.dtos;
+package com.example.demo.models.dtos.mappings;
 
-import com.example.demo.models.entities.Comment;
+import com.example.demo.models.dtos.TicketCreateDTO;
 import com.example.demo.models.entities.Ticket;
 import org.springframework.stereotype.Service;
 

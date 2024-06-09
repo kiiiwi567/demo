@@ -3,20 +3,15 @@ package com.example.demo.controllers;
 import com.example.demo.models.dtos.TicketCreateDTO;
 import com.example.demo.models.dtos.TicketEditDTO;
 import com.example.demo.models.dtos.TicketFullDTO;
-import com.example.demo.models.entities.Ticket;
 import com.example.demo.services.TicketService;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 
@@ -49,7 +44,6 @@ public class TicketController {
             ticketService.createTicket(newTicket, ticketFiles, request);
             return new ResponseEntity<>(HttpStatus.CREATED);
         } catch (IOException e) {
-            System.out.println("ERROR UUUU" + e.getMessage());
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
@@ -62,7 +56,6 @@ public class TicketController {
             ticketService.createUnauthTicket(newTicket, ticketFiles);
             return new ResponseEntity<>(HttpStatus.CREATED);
         } catch (IOException e) {
-            System.out.println("ERROR UUUU" + e.getMessage());
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
@@ -80,17 +73,12 @@ public class TicketController {
     @PostMapping(value = "/editTicket/{id}")
     public ResponseEntity<String> saveEditedTicket(HttpServletRequest request,
                                                    @RequestParam(name = "editTicket") String editedTicketJson,
-                                                   @RequestParam(name = "newFiles",required = false) MultipartFile[] ticketFiles,
-                                                    RedirectAttributes attributes) {
-//        ticketService.editTicket(editedTicket, request, attachments, categoryId);
-//        attributes.addAttribute("id", editedTicket.getId());
-//        return ResponseEntity.ok("Ticket saved successfully");
+                                                   @RequestParam(name = "newFiles",required = false) MultipartFile[] ticketFiles) {
         try {
             TicketEditDTO dto = objectMapper.readValue(editedTicketJson, TicketEditDTO.class);
             ticketService.editTicket(dto, ticketFiles, request);
             return new ResponseEntity<>(HttpStatus.ACCEPTED);
         } catch (IOException e) {
-            System.out.println("ERROR UUUU" + e.getMessage());
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
